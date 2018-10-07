@@ -5,10 +5,13 @@ import machine
 import dht
 import onewire, ds18x20
 
-WIFI_ESSID = $CONFIG_WIFI_ESSID
-WIFI_PASSWD = $CONFIG_WIFI_PASSWD
-CARBON_HOST = $CONFIG_CARBON_HOST
+WIFI_ESSID = '$CONFIG_WIFI_ESSID'
+WIFI_PASSWD = '$CONFIG_WIFI_PASSWD'
+CARBON_HOST = '$CONFIG_CARBON_HOST'
 CARBON_PORT = $CONFIG_CARBON_PORT
+
+# TODO do not even build output strings if debug is off
+DEBUG_LOG_ENABLED = $CONFIG_DEBUG_LOG_ENABLED
 
 DEEPSLEEP_MS = 30000
 
@@ -34,14 +37,14 @@ def init_temp_sensor():
     dat = machine.Pin(TEMP_SENSOR_PIN)
     ds = ds18x20.DS18X20(onewire.OneWire(dat))
     roms = ds.scan()
-    print('init temp sensor done, found onewire devices:', roms)
+    log_debug('init temp sensor done, found onewire devices: ' + str(roms))
 
 def do_onewire_reading():
     ds.convert_temp()
     # we sleep anyway for beeping in the main loop
     # time.sleep_ms(750)
 
-def read_first_onewire_temp():
+def read_onewire_temp_from_first_device():
     temp = 0
     for rom in roms:
         temp = ds.read_temp(rom)
@@ -55,21 +58,22 @@ def read_first_onewire_temp():
 def init_wifi():
     sta_if = network.WLAN(network.STA_IF)
     if not sta_if.isconnected():
-        print('connecting to network '+ WIFI_ESSID + ' ...')
+        log_debug('connecting to network '+ WIFI_ESSID + ' ...')
         sta_if.active(True)
         sta_if.connect(WIFI_ESSID, WIFI_PASSWD)
         while not sta_if.isconnected():
             sleep(.3)
-            print('waiting ...')
+            log_debug('waiting ...')
             pass
-    print('init wifi done, network config:', sta_if.ifconfig())
+    log_debug('init wifi done, network config: ' + str(sta_if.ifconfig()))
 
 def init_addr_info():
     global carbon_addr
 
     carbon_addr_info = socket.getaddrinfo(CARBON_HOST, CARBON_PORT)
+    # OS Error 2 here means host not found / resolvable
     carbon_addr = carbon_addr_info[0][-1]
-    print('init addr info done, sending data to ' + CARBON_HOST + ':' + str(CARBON_PORT))
+    log_debug('init addr info done, sending data to ' + CARBON_HOST + ':' + str(CARBON_PORT))
 
 def send_to_carbon(temp_a, temp_b, humidity):
     s = socket.socket()
@@ -88,17 +92,17 @@ def init_deepsleep():
     global rtc
 
     if machine.reset_cause() == machine.DEEPSLEEP_RESET:
-        print('woke from a deep sleep')
+        log_debug('woke from a deep sleep')
     else:
-        print('power on or hard reset')
+        log_debug('power on or hard reset')
 
     # configure RTC.ALARM0 to be able to wake the device
     rtc = machine.RTC()
     rtc.irq(trigger=rtc.ALARM0, wake=machine.DEEPSLEEP)
-    print('init deepsleep done')
+    log_debug('init deepsleep done')
 
 def deepsleep():
-    print('going to deepsleep for: '+ str(DEEPSLEEP_MS))
+    log_debug('going to deepsleep for: '+ str(DEEPSLEEP_MS))
     # set RTC.ALARM0 to fire after 10 seconds (waking the device)
     rtc.alarm(rtc.ALARM0, DEEPSLEEP_MS)
     machine.deepsleep()
@@ -132,25 +136,40 @@ def holdoff(previous_seconds):
         return previous_seconds * 2
 
 def print_results(temp_dht, temp_maxin, humidity):
-    print("temp_dht: {:.1f} *C \t temp_maxin: {:.1f} *C \t humidity: {}%".format(
+    log_info("temp_dht: {:.1f} *C \t temp_maxin: {:.1f} *C \t humidity: {}%".format(
         temp_dht, temp_maxin, humidity))
+
+def log_debug(message):
+    if DEBUG_LOG_ENABLED:
+        print(message)
+
+def log_info(message):
+    print(message)
+
+def log_error(message):
+    print(message)
 
 def main_loop():
     err_timeout = 1
     iterations = 1
     while True:
         try:
+            log_debug("measuring dht22")
             dht22.measure()
             led_on()
+            log_debug("measuring max temp sensor")
             do_onewire_reading()
             led_off()
             ledpin.value(1)
             sleep(1)
             # sleeping at least 1 sec
+            log_debug("read dht22 value")
             temp_dht = dht22.temperature()
-            temp_maxin = read_first_onewire_temp()
+            log_debug("read max temp value")
+            temp_maxin = read_onewire_temp_from_first_device()
             humidity = dht22.humidity()
             print_results(temp_dht, temp_maxin, humidity)
+            log_debug("sending data to carbon cache")
             send_to_carbon(temp_dht, temp_maxin, humidity)
 
             if iterations >= 5:
@@ -159,7 +178,8 @@ def main_loop():
             iterations += 1
             err_timeout = 1
         except Exception as err:
-            print("Error (sleeping for "+ str(err_timeout) +"): " + str(err))
+            log_error("Error (sleeping for "+ str(err_timeout) +"): " + str(err))
+            # Errno 110 ETIMEOUT might be a sensor is not available or responding, check cables
             err_timeout = holdoff(err_timeout)
             sleep(err_timeout)
 
@@ -168,7 +188,7 @@ init_addr_info()
 init_temp_sensor()
 init_deepsleep()
 blink()
-print('init done, starting main loop')
+log_debug('init done, starting main loop')
 main_loop()
 
 
