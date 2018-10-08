@@ -1,6 +1,10 @@
 from time import sleep
+import utime
 import network
 import socket
+import sys
+
+import ujson
 import machine
 import dht
 import onewire, ds18x20
@@ -13,10 +17,15 @@ CARBON_PORT = $CONFIG_CARBON_PORT
 # TODO do not even build output strings if debug is off
 DEBUG_LOG_ENABLED = $CONFIG_DEBUG_LOG_ENABLED
 
-DEEPSLEEP_MS = 30000
+
 
 DHT22_PIN = 12
 TEMP_SENSOR_PIN = 13
+DEEPSLEEP_MS = 30 * 1000
+STORAGE_FILENAME = 'db.dat'
+
+ERROR_TIMEOUT_HOLDOFF_START_SECONDS = 1
+ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS = 60
 
 dht22 = dht.DHT22(machine.Pin(DHT22_PIN))
 ledpin = machine.Pin(0, machine.Pin.OUT)
@@ -25,6 +34,8 @@ rtc = None
 ds = None
 roms = None
 carbon_addr = None
+state = None
+now = None
 
 #
 # temp sensor
@@ -126,18 +137,79 @@ def blink():
         sleep(0.3)
 
 #
+# time
+#
+
+def init_time():
+    global now
+    now = utime.time()
+
+#
+# state
+#
+
+def build_state_entry(time, iterations, temp_dht, temp_maxin, humidity):
+    return {'time': time, 'iterations': iterations, 'temp_dht': temp_dht, 'temp_maxin': temp_maxin, 'humidity': humidity}
+
+def append_state_entry(state_entry):
+    global state
+    state.append(state_entry)
+
+def init_state():
+    touch_file(STORAGE_FILENAME)
+    load_state()
+
+def touch_file(file_path):
+    db_file = open(file_path, 'a')
+    db_file.close()
+
+def load_state():
+    log_debug('loading db state')
+    global state
+    state = do_load_state()
+
+def do_load_state():
+    db_file = open(STORAGE_FILENAME, 'r+')
+    try:
+        the_read_state = ujson.load(db_file)
+        if the_read_state != None:
+            return the_read_state
+    except ValueError as ve:
+        # might happen initially, start with empty state
+        log_debug('could not read state file, starting fresh')
+    finally:
+        db_file.close()
+
+    return []
+
+def store_state():
+    global state
+    log_debug('storing db state')
+    db_file = open(STORAGE_FILENAME, 'w+')
+    try:
+        ujson.dump(state, db_file)
+    finally:
+        db_file.close()
+
+#
 # utility
 #
 
-def holdoff(previous_seconds):
-    if previous_seconds > 60:
-        return 60
+def calculate_holdoff_seconds(previous_seconds):
+    if previous_seconds > ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS:
+        return ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS
     else:
         return previous_seconds * 2
 
 def print_results(temp_dht, temp_maxin, humidity):
     log_info("temp_dht: {:.1f} *C \t temp_maxin: {:.1f} *C \t humidity: {}%".format(
         temp_dht, temp_maxin, humidity))
+
+# does not obey log setting
+def print_state():
+    global state
+    print("state")
+    print(ujson.dumps(state))
 
 def log_debug(message):
     if DEBUG_LOG_ENABLED:
@@ -150,7 +222,7 @@ def log_error(message):
     print(message)
 
 def main_loop():
-    err_timeout = 1
+    last_err_timeout_seconds = 1
     iterations = 1
     while True:
         try:
@@ -172,21 +244,28 @@ def main_loop():
             log_debug("sending data to carbon cache")
             send_to_carbon(temp_dht, temp_maxin, humidity)
 
+            state_entry = build_state_entry(now, iterations, temp_dht, temp_maxin, humidity)
+            append_state_entry(state_entry)
+            store_state()
+
             if iterations >= 5:
+                print_state()
                 deepsleep()
 
             iterations += 1
-            err_timeout = 1
+            last_err_timeout_seconds = ERROR_TIMEOUT_HOLDOFF_START_SECONDS
         except Exception as err:
-            log_error("Error (sleeping for "+ str(err_timeout) +"): " + str(err))
+            last_err_timeout_seconds = calculate_holdoff_seconds(last_err_timeout_seconds)
+            log_error("Error! (sleeping for "+ str(last_err_timeout_seconds) +"): " + str(err))
             # Errno 110 ETIMEOUT might be a sensor is not available or responding, check cables
-            err_timeout = holdoff(err_timeout)
-            sleep(err_timeout)
+            sleep(last_err_timeout_seconds)
 
 init_wifi()
 init_addr_info()
 init_temp_sensor()
 init_deepsleep()
+init_time()
+init_state()
 blink()
 log_debug('init done, starting main loop')
 main_loop()
@@ -196,6 +275,4 @@ main_loop()
 # - use ntp
 # - store sensor values on nvram
 # - reuse time / check deepsleep accuracy
-#
-#
 
