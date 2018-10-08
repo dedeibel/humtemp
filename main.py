@@ -83,6 +83,8 @@ def init_addr_info():
 
     carbon_addr_info = socket.getaddrinfo(CARBON_HOST, CARBON_PORT)
     # OS Error 2 here means host not found / resolvable
+
+    # TODO can be temporary, reboot / join the error loop
     carbon_addr = carbon_addr_info[0][-1]
     log_debug('init addr info done, sending data to ' + CARBON_HOST + ':' + str(CARBON_PORT))
 
@@ -171,6 +173,7 @@ def load_state():
 def do_load_state():
     db_file = open(STORAGE_FILENAME, 'r+')
     try:
+        # TODO better use a robust linear format, simply line based
         the_read_state = ujson.load(db_file)
         if the_read_state != None:
             return the_read_state
