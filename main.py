@@ -4,6 +4,7 @@ import network
 import socket
 import sys
 
+import ntptime
 import ujson
 import machine
 import dht
@@ -14,17 +15,15 @@ WIFI_PASSWD = '$CONFIG_WIFI_PASSWD'
 CARBON_HOST = '$CONFIG_CARBON_HOST'
 CARBON_PORT = $CONFIG_CARBON_PORT
 
-# TODO do not even build output strings if debug is off
 DEBUG_LOG_ENABLED = $CONFIG_DEBUG_LOG_ENABLED
-
 
 
 DHT22_PIN = 12
 TEMP_SENSOR_PIN = 13
+# about 3:30h max https://thingpulse.com/max-deep-sleep-for-esp8266/
 DEEPSLEEP_MS = 30 * 1000
 STORAGE_FILENAME = 'db.dat'
 
-ERROR_TIMEOUT_HOLDOFF_START_SECONDS = 1
 ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS = 60
 
 dht22 = dht.DHT22(machine.Pin(DHT22_PIN))
@@ -142,12 +141,13 @@ def blink():
 # time
 #
 
-def init_time():
+def init_time_via_ntp():
     global now
+    ntptime.settime()
     now = utime.time()
 
 #
-# state
+# state and state storage
 #
 
 def build_state_entry(time, iterations, temp_dht, temp_maxin, humidity):
@@ -156,6 +156,10 @@ def build_state_entry(time, iterations, temp_dht, temp_maxin, humidity):
 def append_state_entry(state_entry):
     global state
     state.append(state_entry)
+
+def state_entry_count():
+    global state
+    return len(state)
 
 def init_state():
     touch_file(STORAGE_FILENAME)
@@ -173,7 +177,6 @@ def load_state():
 def do_load_state():
     db_file = open(STORAGE_FILENAME, 'r+')
     try:
-        # TODO better use a robust linear format, simply line based
         the_read_state = ujson.load(db_file)
         if the_read_state != None:
             return the_read_state
@@ -195,14 +198,24 @@ def store_state():
         db_file.close()
 
 #
-# utility
+# error handling
 #
 
-def calculate_holdoff_seconds(previous_seconds):
-    if previous_seconds > ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS:
+def reset_holdoff_timer():
+    global last_err_timeout_seconds
+    last_err_timeout_seconds = 1
+
+def next_holdoff_seconds():
+    global last_err_timeout_seconds
+    if last_err_timeout_seconds > ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS:
         return ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS
     else:
-        return previous_seconds * 2
+        last_err_timeout_seconds *= 2
+        return last_err_timeout_seconds
+
+#
+# utility
+#
 
 def print_results(temp_dht, temp_maxin, humidity):
     log_info("temp_dht: {:.1f} *C \t temp_maxin: {:.1f} *C \t humidity: {}%".format(
@@ -224,58 +237,66 @@ def log_info(message):
 def log_error(message):
     print(message)
 
+#
+# main
+#
+
 def main_loop():
-    last_err_timeout_seconds = 1
     iterations = 1
     while True:
         try:
             log_debug("measuring dht22")
             dht22.measure()
             led_on()
+
             log_debug("measuring max temp sensor")
             do_onewire_reading()
             led_off()
-            ledpin.value(1)
-            sleep(1)
             # sleeping at least 1 sec
+            sleep(1)
+
             log_debug("read dht22 value")
             temp_dht = dht22.temperature()
+
             log_debug("read max temp value")
             temp_maxin = read_onewire_temp_from_first_device()
+
             humidity = dht22.humidity()
+
             print_results(temp_dht, temp_maxin, humidity)
+
+            try:
+                state_entry = build_state_entry(now, iterations, temp_dht, temp_maxin, humidity)
+                append_state_entry(state_entry)
+                log_debug("storing current state, with "+ str(state_entry_count()) +" entries")
+                store_state()
+            except Exception as err:
+                log_error("Error storing measurments locally, ignoring. Exception: " + str(err))
+
             log_debug("sending data to carbon cache")
             send_to_carbon(temp_dht, temp_maxin, humidity)
-
-            state_entry = build_state_entry(now, iterations, temp_dht, temp_maxin, humidity)
-            append_state_entry(state_entry)
-            store_state()
 
             if iterations >= 5:
                 print_state()
                 deepsleep()
 
             iterations += 1
-            last_err_timeout_seconds = ERROR_TIMEOUT_HOLDOFF_START_SECONDS
+            reset_holdoff_timer()
         except Exception as err:
-            last_err_timeout_seconds = calculate_holdoff_seconds(last_err_timeout_seconds)
-            log_error("Error! (sleeping for "+ str(last_err_timeout_seconds) +"): " + str(err))
+            timeout_seconds = next_holdoff_seconds()
+            log_error("Error in mainloop! (sleeping for "+ str(timeout_seconds) +"): " + str(err))
             # Errno 110 ETIMEOUT might be a sensor is not available or responding, check cables
-            sleep(last_err_timeout_seconds)
+            sleep(timeout_seconds)
 
 init_wifi()
 init_addr_info()
 init_temp_sensor()
 init_deepsleep()
-init_time()
+init_time_via_ntp()
 init_state()
+reset_holdoff_timer()
 blink()
 log_debug('init done, starting main loop')
+
 main_loop()
-
-
-# TODO
-# - use ntp
-# - store sensor values on nvram
-# - reuse time / check deepsleep accuracy
 
