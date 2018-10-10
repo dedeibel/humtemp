@@ -83,7 +83,6 @@ def init_addr_info():
     carbon_addr_info = socket.getaddrinfo(CARBON_HOST, CARBON_PORT)
     # OS Error 2 here means host not found / resolvable
 
-    # TODO can be temporary, reboot / join the error loop
     carbon_addr = carbon_addr_info[0][-1]
     log_debug('init addr info done, sending data to ' + CARBON_HOST + ':' + str(CARBON_PORT))
 
