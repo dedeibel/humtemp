@@ -3,6 +3,8 @@ set -e
 
 if [ ! -e config ]; then
   echo "file 'config'" not found, created one, please fill with values and retry
+  
+  # default config values
   cat <<HERE > config
 # for the build tool
 export CONFIG_SERIAL_DEVICE=/dev/ttyUSB0
@@ -28,14 +30,26 @@ fi
 
 [ -e dist ] || mkdir dist
 rsync --update --delete --recursive --include="*.py" --exclude="*" . dist/
-envsubst < main.py > dist/main.py
+# substitute config values
+for i in `ls -1 *.py`; do
+  envsubst < "$i" > dist/"$i"
+done
 
+# duck the screen terminal
 if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
   screen -XS humtemp quit || true
 fi
 
+# target dir
 cd dist
-for i in `ls -1`; do
+
+# syntax check
+for i in `ls -1 *.py`; do
+  python -m py_compile "$i"
+done
+
+# copy to device
+for i in `ls -1 *.py`; do
   echo "copying $i"
   ampy --port "${CONFIG_SERIAL_DEVICE}" put "$i" "$i"
 done

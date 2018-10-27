@@ -6,7 +6,8 @@
  - Algorithm: Measure three times, go to sleep
  - Algorithm: When enough samples are measured, send to carbon
  - Handle getaddinfo OSError 2, temporary namespace resolution
- - Check deepsleep accuracy
+ - Store iterations in state and use it for ntp date updates
+ - Test deepsleep accuracy
  - Reuse time from last time after deepsleep
  - Redo ntp after TBD amount of time
  - Determine how much entries could be stored max
