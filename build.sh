@@ -8,7 +8,7 @@ if [ ! -e config ]; then
   cat <<HERE > config
 # for the build tool
 export CONFIG_SERIAL_DEVICE=/dev/ttyUSB0
-export CONFIG_KILL_SCREEN=1
+export CONFIG_KILL_SCREEN=0
 # for the app
 export CONFIG_WIFI_ESSID='mywifi'
 export CONFIG_WIFI_PASSWD='secret'
