@@ -2,13 +2,14 @@ from time import sleep
 
 from configuration import *
 from log import *
-from led import *
 from myntptime import init_time_via_ntp, unix_time
 from deepsleep import init_deepsleep, deepsleep
 from temp_sensor import *
 from humid_sensor import *
 from state import *
 from carbon import send_state_to_carbon
+
+from linestore import Linestore
 
 #
 # error handling
@@ -61,10 +62,8 @@ def main_loop():
                 init_time_via_ntp()
 
             measure_humidity()
-            led_on()
 
             do_onewire_reading()
-            led_off()
             # sleeping at least 1 sec since the temp sensor needs time, also humidity sensor can only be
             # read every second
             sleep(1)
@@ -109,7 +108,18 @@ init_humid_sensor()
 init_state()
 reset_holdoff_timer()
 blink()
-log_debug('init done, starting main loop')
+log_debug('x init done, starting main loop')
+
+log_debug('XXXX init linestore')
+store = Linestore(path)
+store.open()
+store.append(1, [2.0])
+store.close()
+store.open()
+result = store.readlines(2)
+log_debug('XXXX')
+log_debug('result:' + str(result))
+log_debug('XXXX')
 
 main_loop()
 
