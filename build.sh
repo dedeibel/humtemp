@@ -29,10 +29,19 @@ if [ -z "$CONFIG_SERIAL_DEVICE" ]; then
 fi
 
 [ -e dist ] || mkdir dist
-rsync --update --delete --recursive --include="*.py" --exclude="*" . dist/
+
 # substitute config values
 for i in `ls -1 *.py`; do
+  [[ "$i" =~ ^.*_test.py$ ]] && continue
+  [[ "$i" =~ __.py$ ]] && continue
+
   envsubst < "$i" > dist/"$i"
+
+  perl -pe 's/#.*//' dist/"$i" > dist/"$i".tmp
+  mv dist/"$i".tmp dist/"$i"
+
+  perl -ne 'print $_ if not s/^\s*\n$//' dist/"$i" > dist/"$i".tmp
+  mv dist/"$i".tmp dist/"$i"
 done
 
 # duck the screen terminal
@@ -47,6 +56,9 @@ cd dist
 for i in `ls -1 *.py`; do
   python -m py_compile "$i"
 done
+
+SIZE=`du --block-size=1 --total *py | tail --lines 1 | cut --fields 1`
+echo "size $SIZE (available 40960)"
 
 # copy to device
 for i in `ls -1 *.py`; do
