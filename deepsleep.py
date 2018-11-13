@@ -2,7 +2,7 @@ import machine
 
 from configuration import *
 from log import *
-from myntptime import init_time_via_ntp, unix_time, strftime
+from myntptime import *
 
 rtc = None
 

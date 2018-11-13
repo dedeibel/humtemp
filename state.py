@@ -2,15 +2,27 @@ import ujson
 
 from configuration import *
 from log import *
+from linestore import *
 
-state = None
+DATA_VERSION = 1
+state = []
 
-def build_state_entry(time, iteration, temp_dht, temp_maxin, humidity):
-    return {'time': time, 'iteration': iteration, 'temp_dht': temp_dht, 'temp_maxin': temp_maxin, 'humidity': humidity}
+def build_state_entry(time, iteration, temp_dht, humidity, temp1, temp2, temp3):
+    return {
+            'time': time,
+            'iteration': iteration,
+            'temp_dht': temp_dht,
+            'humidity': humidity,
+            'temp1': temp1,
+            'temp2': temp2,
+            'temp3': temp3}
 
 def append_state_entry(state_entry):
     global state
     state.append(state_entry)
+
+    with Linestore(STORAGE_FILENAME) as linestore:
+        linestore.append(DATA_VERSION, _export_line(state_entry))
 
 def get_state_entries():
     return state
@@ -20,51 +32,32 @@ def state_entry_count():
     return len(state)
 
 def init_state():
-    delete_state_entries()
-    _touch_file(STORAGE_FILENAME)
-    _load_state()
+    log_debug('loading db state')
+    with Linestore(STORAGE_FILENAME) as linestore:
+        _import_all(linestore.readlines(DATA_VERSION))
+
     log_debug('state has %d entries' % (state_entry_count()))
 
-def delete_state_entries():
+def _import_all(line_arrays):
+    for line in line_arrays:
+        _import(line)
+
+def _import(line):
     global state
-    state = []
+    state.append(
+        build_state_entry(line[0], line[1], line[2], line[3], line[4], line[5], line[6]))
 
-def delete_older_state_entries():
-    global state
-    log_debug('purging older state entries %d to %d' % (state_entry_count(), DELETE_OLDER_ELEMENTS_COUNT_IF_MAX_REACHED))
-    del state[:DELETE_OLDER_ELEMENTS_COUNT_IF_MAX_REACHED]
+def _export_line(state_entry):
+    return [state_entry['time'],
+            state_entry['iteration'],
+            state_entry['temp_dht'],
+            state_entry['humidity'],
+            state_entry['temp1'],
+            state_entry['temp2'],
+            state_entry['temp3']]
 
-def _touch_file(file_path):
-    db_file = open(file_path, 'a')
-    db_file.close()
-
-def _load_state():
-    log_debug('loading db state')
-    global state
-    state = _do_load_state()
-
-def _do_load_state():
-    db_file = open(STORAGE_FILENAME, 'r+')
-    try:
-        the_read_state = ujson.load(db_file)
-        if the_read_state != None:
-            return the_read_state
-    except ValueError as ve:
-        # might happen initially, start with empty state
-        log_debug('could not read state file, starting fresh')
-    finally:
-        db_file.close()
-
-    return []
-
-def store_state():
-    global state
-    log_debug('storing current state, with %d entries' % (state_entry_count()))
-    db_file = open(STORAGE_FILENAME, 'w+')
-    try:
-        ujson.dump(state, db_file)
-    finally:
-        db_file.close()
+def truncate_state():
+    Linestore(STORAGE_FILENAME).truncate()
 
 # does not obey log setting
 def print_state():
