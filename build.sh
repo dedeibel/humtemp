@@ -56,13 +56,23 @@ cd dist
 for i in `ls -1 *.py`; do
   python -m py_compile "$i"
 done
+rm -f *.pyc
 
-SIZE=`du --block-size=1 --total *py | tail --lines 1 | cut --fields 1`
-echo "size $SIZE (available 40960)"
+python ../util/includemodules.py main.py main.tmp
+mv main.tmp main.py
 
-# copy to device
-for i in `ls -1 *.py`; do
-  echo "copying $i"
-  ampy --port "${CONFIG_SERIAL_DEVICE}" put "$i" "$i"
-done
+python -m py_compile main.py
+rm -f *.pyc
+
+#ampy --port "${CONFIG_SERIAL_DEVICE}" put boot.py
+#ampy --port "${CONFIG_SERIAL_DEVICE}" put main.py
+
+#SIZE=`du --block-size=1 --total *py | tail --lines 1 | cut --fields 1`
+#echo "size $SIZE (available 40960)"
+#
+## copy to device
+#for i in `ls -1 *.py`; do
+#  echo "copying $i"
+##  ampy --port "${CONFIG_SERIAL_DEVICE}" put "$i" "$i"
+#done
 

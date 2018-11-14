@@ -2,14 +2,14 @@ from time import sleep
 
 from configuration import *
 from log import *
-from myntptime import init_time_via_ntp, unix_time
-from deepsleep import init_deepsleep, deepsleep
+from myntptime import *
+from deepsleep import *
 from temp_sensor import *
 from humid_sensor import *
 from state import *
-from carbon import send_state_to_carbon
+from carbon import *
 
-from linestore import Linestore
+from linestore import *
 
 #
 # error handling

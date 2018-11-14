@@ -3,8 +3,8 @@ import uerrno
 
 from configuration import *
 from log import *
-from state import get_state_entries
-from wifi import init_wifi
+from state import *
+from wifi import *
 
 carbon_addr = None
 

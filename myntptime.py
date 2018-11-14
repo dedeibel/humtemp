@@ -2,7 +2,7 @@ import utime
 import ntptime
 
 from log import *
-from wifi import init_wifi
+from wifi import *
 
 def strftime():
     lt = utime.localtime()

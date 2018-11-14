@@ -49,6 +49,17 @@ Prepare esp with micropython.
 Or manually call `envsubst` from the build script and then copy the files to your micropython
 prepared esp.
 
+## Util Tools
+
+### includemodules.py
+
+Works only for module files that are present in the current directory. Works
+only for imports of all symbols.
+
+```
+pip install pathlib
+```
+
 ## References
 
  - https://learn.adafruit.com/building-and-running-micropython-on-the-esp8266
