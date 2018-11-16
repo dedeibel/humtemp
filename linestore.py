@@ -1,5 +1,5 @@
 import os
-from struct import pack, unpack
+from ustruct import pack, unpack
 
 # tab sep floats
 class Linestore:
@@ -20,10 +20,14 @@ class Linestore:
         # x1E separator of fields RS
         # xFFx1DxFF end of group / data entry GS
         # Min size 9 bytes
-        self.fp.seek(0, os.SEEK_END)
-        self.fp.write("\xFF\x00\xFF" + pack("H", version) + "\x02")
+        # SEEK_END = 2
+        self.fp.seek(0, 2)
+        self.fp.write("\xFF\x00\xFF")
+        self.fp.write(pack("H", version))
+        self.fp.write("\x02")
         for val in data:
-            self.fp.write(pack("f", val) + "\x1E")
+            self.fp.write(pack("f", val))
+            self.fp.write("\x1E")
         self.fp.write("\xFF\x1D\xFF")
         self.fp.flush()
         # gibt version aus
@@ -40,7 +44,10 @@ class Linestore:
         while True:
             chunk = self.fp.read(Linestore.CHUNK_SIZE)
             print("chunk len: " + str(len(chunk)))
-            print("to read: "+ ''.join('%02x'%ord(i) for i in chunk))
+            s = "to read: "
+            for i in chunk:
+                s += '%02x' % i
+            print(s)
             if chunk == "":
                 break
             elif len(chunk) < 9:
@@ -83,7 +90,10 @@ class Linestore:
                 if (len(chunk) - entry_index) < 4:
                     break
 
-                print("to read: "+ ''.join('%02x'%ord(i) for i in chunk[entry_index:entry_index + 4]))
+                s = "to read: "
+                for i in chunk:
+                    s += '%02x' % i
+                print(s)
 
                 print("val: "+ str(float(unpack('f', chunk[entry_index:entry_index + 4])[0])))
 

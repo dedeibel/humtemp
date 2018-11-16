@@ -20,7 +20,6 @@ HERE
   exit 1
 fi
 
-
 . config
 
 if [ -z "$CONFIG_SERIAL_DEVICE" ]; then
@@ -36,36 +35,43 @@ for i in `ls -1 *.py`; do
   [[ "$i" =~ __.py$ ]] && continue
 
   envsubst < "$i" > dist/"$i"
-
-  perl -pe 's/#.*//' dist/"$i" > dist/"$i".tmp
-  mv dist/"$i".tmp dist/"$i"
-
-  perl -ne 'print $_ if not s/^\s*\n$//' dist/"$i" > dist/"$i".tmp
-  mv dist/"$i".tmp dist/"$i"
 done
-
-# duck the screen terminal
-if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
-  screen -XS humtemp quit || true
-fi
 
 # target dir
 cd dist
 
 # syntax check
 for i in `ls -1 *.py`; do
+  # remove comments
+  perl -pe 's/#.*//' "$i" > "$i".tmp
+  mv "$i".tmp "$i"
+
+  # remove empty lines
+  perl -ne 'print $_ if not s/^\s*\n$//' "$i" > "$i".tmp
+  mv "$i".tmp "$i"
+
   python -m py_compile "$i"
 done
+
+python ../util/includemodules.py humtemp.py humtemp.tmp
+mv humtemp.tmp humtemp.py
+
+python -m py_compile humtemp.py
 rm -f *.pyc
 
-python ../util/includemodules.py main.py main.tmp
-mv main.tmp main.py
+#  -mcache-lookup-bc gives incompatbile mpy file msg
+mpy-cross -O2 -o humtemp.mpy humtemp.py
 
-python -m py_compile main.py
-rm -f *.pyc
+# duck the screen terminal
+if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
+  if ( screen -list | grep -q humtemp ); then
+    screen -XS humtemp quit || true
+  fi
+fi
 
-#ampy --port "${CONFIG_SERIAL_DEVICE}" put boot.py
-#ampy --port "${CONFIG_SERIAL_DEVICE}" put main.py
+ampy --port "${CONFIG_SERIAL_DEVICE}" put humtemp.mpy
+ampy --port "${CONFIG_SERIAL_DEVICE}" put main.py
+ampy --port "${CONFIG_SERIAL_DEVICE}" put boot.py
 
 #SIZE=`du --block-size=1 --total *py | tail --lines 1 | cut --fields 1`
 #echo "size $SIZE (available 40960)"
