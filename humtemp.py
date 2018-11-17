@@ -111,20 +111,6 @@ def start():
     reset_holdoff_timer()
     blink()
     
-    # experiment
-    log_debug('x init done, starting main loop')
-    
-    log_debug('XXXX init linestore')
-    store = Linestore('ls.db')
-    store.open()
-    store.append(1, [2.0])
-    store.close()
-    store.open()
-    result = store.readlines(1)
-    log_debug('XXXX')
-    for n in result:
-        log_debug('result:' + str(n))
-    log_debug('XXXX')
-    
+    log_debug('init done, starting main loop')
     main_loop()
 

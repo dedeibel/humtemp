@@ -1,5 +1,8 @@
 import os
-from ustruct import pack, unpack
+from struct import pack, unpack
+
+def _hex(data):
+    return ''.join(str(i) for i in data)
 
 # tab sep floats
 class Linestore:
@@ -7,6 +10,11 @@ class Linestore:
 
     def __init__(self, filepath):
         self.filepath = filepath
+        self._create_file()
+
+    def _create_file(self):
+        db_file = open(self.filepath, 'a')
+        db_file.close()
 
     def open(self):
         self.fp = open(self.filepath, 'r+b')
@@ -22,13 +30,13 @@ class Linestore:
         # Min size 9 bytes
         # SEEK_END = 2
         self.fp.seek(0, 2)
-        self.fp.write("\xFF\x00\xFF")
+        self.fp.write(b"\xFF\x00\xFF")
         self.fp.write(pack("H", version))
-        self.fp.write("\x02")
+        self.fp.write(b"\x02")
         for val in data:
             self.fp.write(pack("f", val))
-            self.fp.write("\x1E")
-        self.fp.write("\xFF\x1D\xFF")
+            self.fp.write(b"\x1E")
+        self.fp.write(b"\xFF\x1D\xFF")
         self.fp.flush()
         # gibt version aus
         # fuer alle eintraege
@@ -44,21 +52,18 @@ class Linestore:
         while True:
             chunk = self.fp.read(Linestore.CHUNK_SIZE)
             print("chunk len: " + str(len(chunk)))
-            s = "to read: "
-            for i in chunk:
-                s += '%02x' % i
-            print(s)
-            if chunk == "":
+            print("to read: " + _hex(chunk))
+            if chunk == b"":
                 break
             elif len(chunk) < 9:
                 # minmum size vor a valid entry
                 break
 
             index = 0
-            if chunk[index:index + 3] == "\xFF\x00\xFF":
+            if chunk[index:index + 3] == b"\xFF\x00\xFF":
                 index += 3
                 try:
-                    print("idx read: "+ ''.join('%02x'%ord(i) for i in chunk[index:index+2]))
+                    print("idx read: "+ _hex(chunk[index:index+2]))
                     found_version = unpack("H", chunk[index:index+2])[0]
                     parsed_version = int(found_version)
                     if parsed_version != version:
@@ -66,7 +71,7 @@ class Linestore:
 
                     index += 2
 
-                    if chunk[index:index + 1] != "\x02":
+                    if chunk[index:index + 1] != b"\x02":
                         print("version not properly terminated")
                         break
 
@@ -80,7 +85,7 @@ class Linestore:
             while entry_index < len(chunk):
                 print("chunk size: "+ str(len(chunk)) +" index: " + str(index) + " entry_idx: "+ str(entry_index))
 
-                if chunk[entry_index:entry_index + 3] == "\xFF\x1D\xFF":
+                if chunk[entry_index:entry_index + 3] == b"\xFF\x1D\xFF":
                     results.append(current_entry)
                     current_entry = []
                     entry_index += 3
@@ -90,17 +95,13 @@ class Linestore:
                 if (len(chunk) - entry_index) < 4:
                     break
 
-                s = "to read: "
-                for i in chunk:
-                    s += '%02x' % i
-                print(s)
-
+                print("to read: " + _hex(chunk))
                 print("val: "+ str(float(unpack('f', chunk[entry_index:entry_index + 4])[0])))
 
                 unpacked = float(unpack('f', chunk[entry_index:entry_index + 4])[0])
                 entry_index += 4
 
-                if chunk[entry_index:entry_index + 1] != "\x1E":
+                if chunk[entry_index:entry_index + 1] != b"\x1E":
                     print("entry not properly terminated")
                     break
 

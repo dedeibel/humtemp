@@ -11,8 +11,8 @@ Temperature and humidity sensor control for the ESP8266 (HUZZAH ESP8266 breakout
 
 ## Sensors
 
- - MAX31820MCR-ND temp sensor [https://www.digikey.com/product-detail/en/maxim-integrated/MAX31820MCR/MAX31820MCR-ND/4271348](https://www.digikey.com/product-detail/en/maxim-integrated/MAX31820MCR/MAX31820MCR-ND/4271348)
- - DHT 22 humidity and temp sensor, Adafruit Industries LLC [https://www.digikey.com/products/en/sensors-transducers/humidity-moisture-sensors/529?k=dht22](https://www.digikey.com/products/en/sensors-transducers/humidity-moisture-sensors/529?k=dht22)
+ - MAX31820MCR-ND temp sensor https://www.digikey.com/product-detail/en/maxim-integrated/MAX31820MCR/MAX31820MCR-ND/4271348
+ - DHT 22 humidity and temp sensor, Adafruit Industries LLC https://www.digikey.com/products/en/sensors-transducers/humidity-moisture-sensors/529?k=dht22
 
 ## Wiring Plan
 
@@ -29,6 +29,7 @@ See configuration.py for options.
 
  - python
  - adafruit `ampy` (`pip install ampy`)
+ - `mpy_cross` https://github.com/micropython/micropython/tree/master/mpy-cross
  - micropython on the esp 
 
 ## Building and running
@@ -64,6 +65,8 @@ pip install pathlib
 
  - https://learn.adafruit.com/building-and-running-micropython-on-the-esp8266
  - https://docs.micropython.org/en/latest/library/index.html#micropython-specific-libraries
+ - https://github.com/micropython/micropython
+ - https://github.com/pfalcon/esp-open-sdk
 
 ## TODOs
 

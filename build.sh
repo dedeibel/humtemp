@@ -16,6 +16,10 @@ export CONFIG_CARBON_HOST='seymourdata'
 export CONFIG_CARBON_PORT=2003
 # Python: True|False case matters
 export CONFIG_DEBUG_LOG_ENABLED=True
+
+# for the ampy client
+export AMPY_PORT=\$CONFIG_SERIAL_DEVICE
+export AMPY_BOUD=460800
 HERE
   exit 1
 fi
@@ -40,8 +44,11 @@ done
 # target dir
 cd dist
 
-# syntax check
 for i in `ls -1 *.py`; do
+  # use upython specific modules
+  perl -pe 's/^from struct /from ustruct /' "$i" > "$i".tmp
+  mv "$i".tmp "$i"
+
   # remove comments
   perl -pe 's/#.*//' "$i" > "$i".tmp
   mv "$i".tmp "$i"
@@ -50,6 +57,7 @@ for i in `ls -1 *.py`; do
   perl -ne 'print $_ if not s/^\s*\n$//' "$i" > "$i".tmp
   mv "$i".tmp "$i"
 
+  # syntax check
   python -m py_compile "$i"
 done
 
@@ -69,16 +77,9 @@ if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
   fi
 fi
 
-ampy --port "${CONFIG_SERIAL_DEVICE}" put humtemp.mpy
-ampy --port "${CONFIG_SERIAL_DEVICE}" put main.py
-ampy --port "${CONFIG_SERIAL_DEVICE}" put boot.py
+SIZE=`du --block-size=1 --total humtemp.mpy main.py boot.py | tail --lines 1 | cut --fields 1`
+echo "device ${AMPY_PORT} boud ${AMPY_BOUD} size $SIZE (available 40961)"
 
-#SIZE=`du --block-size=1 --total *py | tail --lines 1 | cut --fields 1`
-#echo "size $SIZE (available 40960)"
-#
-## copy to device
-#for i in `ls -1 *.py`; do
-#  echo "copying $i"
-##  ampy --port "${CONFIG_SERIAL_DEVICE}" put "$i" "$i"
-#done
-
+ampy put humtemp.mpy
+ampy put main.py
+ampy put boot.py
