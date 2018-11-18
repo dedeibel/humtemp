@@ -140,4 +140,32 @@ class LinestoreTest(unittest.TestCase):
             self.assertEqual(result[2][0], 5)
             self.assertAlmostEqual(result[2][1], 0.0014, 5)
 
+    def test_ignores_garbage_at_the_beginning(self):
+        with TempFilepath() as path:
+            spit(path, "deadbeef"+
+                    b'\xFF\x00\xFF'+ # start group
+                    b'\x01\x00\x02'+ # version
+                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'\xFF\x1D\xFF' # end group
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3]])
+
+    def test_ignores_garbage_at_the_end(self):
+        with TempFilepath() as path:
+            spit(path, 
+                    b'\xFF\x00\xFF'+ # start group
+                    b'\x01\x00\x02'+ # version
+                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'\xFF\x1D\xFF'+ # end group
+                    'deadbeef'
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3]])
 

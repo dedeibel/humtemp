@@ -1,5 +1,27 @@
 import os
-from struct import pack, unpack, calcsize
+from struct import pack, unpack, unpack_from, calcsize
+
+GROUP_START = b'\xFF\x00\xFF'
+GROUP_START_LEN = 3
+GROUP_END = b"\xFF\x1D\xFF"
+GROUP_END_LEN = 3
+VERSION_STMT_END = b'\x02' # Start of text
+VERSION_STMT_END_LEN = 1
+FIELD_END = b'\x1E'
+FIELD_END_LEN = 1
+FLOAT_MARK = 'f'
+INT_MARK = 'i'
+LONG_MARK = 'l'
+MIN_VALID_SIZE = 15
+SIZE_i = calcsize('i')
+SIZE_l = calcsize('l')
+SIZE_f = calcsize('f')
+SIZE_H = calcsize('H')
+
+SEEK_END = 2
+
+CHUNK_SIZE = 128
+
 
 def _hex(data):
     return ''.join(("%02x" % ord(i)) for i in data)
@@ -13,7 +35,29 @@ def _starts(buff, search):
 
 # tab sep floats
 class Linestore:
-    CHUNK_SIZE=128
+    TYPES = [
+        {
+            'type': float,
+            'mark': 'f',
+            'pack': lambda fp, val: fp.write(pack('f', val)),
+            'unpack': lambda buff: float(unpack_from('f', buff)[0]),
+            'size': calcsize('f'),
+        },
+        {
+            'type': int,
+            'mark': 'i',
+            'pack': lambda fp, val: fp.write(pack('i', val)),
+            'unpack': lambda buff: int(unpack_from('i', buff)[0]),
+            'size': calcsize('i'),
+        },
+        {
+            'type': long,
+            'mark': 'l',
+            'pack': lambda fp, val: fp.write(pack('l', val)),
+            'unpack': lambda buff: long(unpack_from('l', buff)[0]),
+            'size': calcsize('l'),
+        },
+    ]
 
     def __init__(self, filepath):
         self.filepath = filepath
@@ -29,39 +73,30 @@ class Linestore:
     def close(self):
         self.fp.close()
 
+    # version: unsiged short
+    # data: [ int | long | float ]
     def append(self, version, data):
-        # xFFx00xFF start of entry
-        # hx1E version statement
-        # x1E separator of fields RS
-        # xFFx1DxFF end of group / data entry GS
-        # Min size 9 bytes
-        # SEEK_END = 2
-        self.fp.seek(0, 2)
-        self.fp.write(b"\xFF\x00\xFF")
-        self.fp.write(pack("H", version))
-        self.fp.write(b"\x02")
+        self.fp.seek(0, SEEK_END) 
+
+        self.fp.write(GROUP_START)
+
+        self.fp.write(pack("H", version)) # unsiged short
+        self.fp.write(VERSION_STMT_END)
+
         for val in data:
-            if type(val) == float:
-                self.fp.write('f')
-                self.fp.write(pack("f", val))
-                self.fp.write(b'\x1E')
-            elif type(val) == int:
-                self.fp.write('i')
-                self.fp.write(pack("i", val))
-                self.fp.write(b'\x1E')
-            elif type(val) == long:
-                self.fp.write('l')
-                self.fp.write(pack("l", val))
-                self.fp.write(b'\x1E')
-            else:
+            found_type = False
+            for typ in Linestore.TYPES:
+                if typ['type'] == type(val):
+                    self.fp.write(typ['mark'])
+                    typ['pack'](self.fp, val)
+                    self.fp.write(FIELD_END)
+                    found_type = True
+
+            if not found_type:
                 print('ERR unsupported type: ' + str(type(val)))
-        self.fp.write(b"\xFF\x1D\xFF")
+
+        self.fp.write(GROUP_END)
         self.fp.flush()
-        # gibt version aus
-        # fuer alle eintraege
-        # gib typ praefix aus
-        # gib daten aus
-        # gib newline aus
 
     def readlines(self, version):
         self.fp.seek(0)
@@ -69,34 +104,32 @@ class Linestore:
         found_version = None
 
         while True:
-            chunk = self.fp.read(Linestore.CHUNK_SIZE)
+            chunk = self.fp.read(CHUNK_SIZE)
             #print("chunk len: " + str(len(chunk)))
             #print("to read: " + _hex(chunk))
 
-            if chunk == b"":
-                break
-            elif len(chunk) < 9:
+            if len(chunk) < 9:
                 # minmum size vor a valid entry
                 break
 
             index = 0
             while index < len(chunk):
-                if _starts(chunk[index:], b'\xFF\x00\xFF'):
-                    index += 3
+                if _starts(chunk[index:], GROUP_START):
+                    index += GROUP_START_LEN
                     try:
                         #print("idx read: "+ _hex(chunk[index:index+2]))
-                        found_version = unpack("H", chunk[index:index+2])[0]
+                        found_version = unpack('H', chunk[index:index + SIZE_H])[0]
                         parsed_version = int(found_version)
                         if parsed_version != version:
                             break
 
-                        index += 2
+                        index += SIZE_H
 
-                        if not _starts(chunk[index:], b"\x02"):
+                        if not _starts(chunk[index:], VERSION_STMT_END):
                             print("version not properly terminated")
                             break
 
-                        index += 1
+                        index += VERSION_STMT_END_LEN
                     except Exception as e:
                         print("illegal version found: " + str(e))
                         break
@@ -111,10 +144,10 @@ class Linestore:
                 while entry_index < len(chunk):
                     #print("chunk size: "+ str(len(chunk)) +" index: " + str(index) + " entry_idx: "+ str(entry_index))
 
-                    if _starts(chunk[entry_index:], b"\xFF\x1D\xFF"):
+                    if _starts(chunk[entry_index:], GROUP_END):
                         results.append(current_entry)
                         current_entry = []
-                        entry_index += 3
+                        entry_index += GROUP_END_LEN
                         break
 
                     # no data plus markers to read
@@ -123,38 +156,30 @@ class Linestore:
 
                     data_type = chunk[entry_index:entry_index + 1]
                     #print("type: "+ _hex(data_type))
-
                     entry_index += 1
 
                     #print("to read: " + _hex(chunk[entry_index:]))
 
                     unpacked_data = None
-                    if data_type == 'f':
-                        unpacked_data = float(unpack('f', chunk[entry_index:entry_index + calcsize('f')])[0])
-                        entry_index += calcsize('f')
-                    elif data_type == 'i':
-                        unpacked_data = int(unpack('i', chunk[entry_index:entry_index + calcsize('i')])[0])
-                        entry_index += calcsize('i')
-                    elif data_type == 'l':
-                        unpacked_data = long(unpack('l', chunk[entry_index:entry_index + calcsize('l')])[0])
-                        entry_index += calcsize('l')
-                    else:
+
+                    found_type = False
+                    for typ in Linestore.TYPES:
+                        if typ['mark'] == data_type:
+                            unpacked_data = typ['unpack'](chunk[entry_index:])
+                            entry_index += typ['size']
+                            found_type = True
+
+                    if not found_type:
                         print('ERR unsupported type: ' + _hex(data_type))
 
                     #print("val: "+ str(unpacked_data))
 
-                    if not _starts(chunk[entry_index:], b"\x1E"):
+                    if not _starts(chunk[entry_index:], FIELD_END):
                         print("entry not properly terminated")
                         break
-                    entry_index += 1
+                    entry_index += FIELD_END_LEN
 
                     current_entry.append(unpacked_data)
-
-                # search for version (buffer 2)
-                # read entries, split at RS
-                # stop at GS
-                #parsed_group = self._parse_group(line)
-                #results.append(parsed_group)
 
         return results
 
