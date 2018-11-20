@@ -1,28 +1,6 @@
 import os
 from struct import pack, unpack, unpack_from, calcsize
 
-GROUP_START = b'\xFF\x00\xFF'
-GROUP_START_LEN = 3
-GROUP_END = b"\xFF\x1D\xFF"
-GROUP_END_LEN = 3
-VERSION_STMT_END = b'\x02' # Start of text
-VERSION_STMT_END_LEN = 1
-FIELD_END = b'\x1E'
-FIELD_END_LEN = 1
-FLOAT_MARK = 'f'
-INT_MARK = 'i'
-LONG_MARK = 'l'
-MIN_VALID_SIZE = 15
-SIZE_i = calcsize('i')
-SIZE_l = calcsize('l')
-SIZE_f = calcsize('f')
-SIZE_H = calcsize('H')
-
-SEEK_END = 2
-
-CHUNK_SIZE = 128
-
-
 def _hex(data):
     return ''.join(("%02x" % ord(i)) for i in data)
 
@@ -35,6 +13,27 @@ def _starts(buff, search):
 
 # tab sep floats
 class Linestore:
+    GROUP_START = b'\xFF\x00\xFF'
+    GROUP_START_LEN = 3
+    GROUP_END = b"\xFF\x1D\xFF"
+    GROUP_END_LEN = 3
+    VERSION_STMT_END = b'\x02' # Start of text
+    VERSION_STMT_END_LEN = 1
+    FIELD_END = b'\x1E'
+    FIELD_END_LEN = 1
+    FLOAT_MARK = 'f'
+    INT_MARK = 'i'
+    LONG_MARK = 'l'
+    MIN_VALID_SIZE = 15
+    SIZE_i = calcsize('i')
+    SIZE_l = calcsize('l')
+    SIZE_f = calcsize('f')
+    SIZE_H = calcsize('H')
+    
+    SEEK_END = 2
+    
+    CHUNK_SIZE = 128
+
     TYPES = [
         {
             'type': float,
@@ -76,12 +75,12 @@ class Linestore:
     # version: unsiged short
     # data: [ int | long | float ]
     def append(self, version, data):
-        self.fp.seek(0, SEEK_END) 
+        self.fp.seek(0, Linestore.SEEK_END) 
 
-        self.fp.write(GROUP_START)
+        self.fp.write(Linestore.GROUP_START)
 
         self.fp.write(pack("H", version)) # unsiged short
-        self.fp.write(VERSION_STMT_END)
+        self.fp.write(Linestore.VERSION_STMT_END)
 
         for val in data:
             found_type = False
@@ -89,13 +88,13 @@ class Linestore:
                 if typ['type'] == type(val):
                     self.fp.write(typ['mark'])
                     typ['pack'](self.fp, val)
-                    self.fp.write(FIELD_END)
+                    self.fp.write(Linestore.FIELD_END)
                     found_type = True
 
             if not found_type:
                 print('ERR unsupported type: ' + str(type(val)))
 
-        self.fp.write(GROUP_END)
+        self.fp.write(Linestore.GROUP_END)
         self.fp.flush()
 
     def readlines(self, version):
@@ -104,7 +103,7 @@ class Linestore:
         found_version = None
 
         while True:
-            chunk = self.fp.read(CHUNK_SIZE)
+            chunk = self.fp.read(Linestore.CHUNK_SIZE)
             #print("chunk len: " + str(len(chunk)))
             #print("to read: " + _hex(chunk))
 
@@ -114,25 +113,26 @@ class Linestore:
 
             index = 0
             while index < len(chunk):
-                if _starts(chunk[index:], GROUP_START):
-                    index += GROUP_START_LEN
+                if _starts(chunk[index:], Linestore.GROUP_START):
+                    index += Linestore.GROUP_START_LEN
                     try:
                         #print("idx read: "+ _hex(chunk[index:index+2]))
-                        found_version = unpack('H', chunk[index:index + SIZE_H])[0]
+                        found_version = unpack('H', chunk[index:index + Linestore.SIZE_H])[0]
                         parsed_version = int(found_version)
                         if parsed_version != version:
-                            break
+                            print("version missmatch, ignoring")
+                            continue
 
-                        index += SIZE_H
+                        index += Linestore.SIZE_H
 
-                        if not _starts(chunk[index:], VERSION_STMT_END):
+                        if not _starts(chunk[index:], Linestore.VERSION_STMT_END):
                             print("version not properly terminated")
-                            break
+                            continue
 
-                        index += VERSION_STMT_END_LEN
+                        index += Linestore.VERSION_STMT_END_LEN
                     except Exception as e:
                         print("illegal version found: " + str(e))
-                        break
+                        continue
                 else:
                     # keep seaching for the start
                     index += 1
@@ -144,10 +144,10 @@ class Linestore:
                 while entry_index < len(chunk):
                     #print("chunk size: "+ str(len(chunk)) +" index: " + str(index) + " entry_idx: "+ str(entry_index))
 
-                    if _starts(chunk[entry_index:], GROUP_END):
+                    if _starts(chunk[entry_index:], Linestore.GROUP_END):
                         results.append(current_entry)
                         current_entry = []
-                        entry_index += GROUP_END_LEN
+                        entry_index += Linestore.GROUP_END_LEN
                         break
 
                     # no data plus markers to read
@@ -171,13 +171,14 @@ class Linestore:
 
                     if not found_type:
                         print('ERR unsupported type: ' + _hex(data_type))
+                        break
 
                     #print("val: "+ str(unpacked_data))
 
-                    if not _starts(chunk[entry_index:], FIELD_END):
+                    if not _starts(chunk[entry_index:], Linestore.FIELD_END):
                         print("entry not properly terminated")
                         break
-                    entry_index += FIELD_END_LEN
+                    entry_index += Linestore.FIELD_END_LEN
 
                     current_entry.append(unpacked_data)
 

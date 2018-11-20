@@ -157,10 +157,10 @@ class LinestoreTest(unittest.TestCase):
     def test_ignores_garbage_at_the_end(self):
         with TempFilepath() as path:
             spit(path, 
-                    b'\xFF\x00\xFF'+ # start group
-                    b'\x01\x00\x02'+ # version
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
                     b'i\x03\x00\x00\x00\x1E'+ # value
-                    b'\xFF\x1D\xFF'+ # end group
+                    Linestore.GROUP_END + # end group
                     'deadbeef'
             );
 
@@ -169,3 +169,84 @@ class LinestoreTest(unittest.TestCase):
             result = store.readlines(1)
             self.assertEqual(result, [[3]])
 
+    def test_ignores_garbage_between_entries(self):
+        with TempFilepath() as path:
+            spit(path, 
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'\xFF\x1D\xFF'+ # end group
+                    'deadbeef' +
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3], [4]])
+
+    def test_ignores_garbage_between_entries_similar_to_separators(self):
+        with TempFilepath() as path:
+            spit(path, 
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END +
+                    b'\xFF\x00\xEF'+ # GARBAGE similar to start grp
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3], [4]])
+
+    def test_ignores_entries_with_different_version_in_between(self):
+        with TempFilepath() as path:
+            spit(path, 
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END +
+                    Linestore.GROUP_START +
+                    b'\x02\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x06\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END +
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3], [4]])
+
+    def test_ignores_entries_with_illegal_termination_are_ignored(self):
+        with TempFilepath() as path:
+            spit(path, 
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END +
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x06\x00\x00\x00\x1E'+ # value
+                    b"\xFF\x1D\xFE" +  # GARBAGE GROUP END
+                    Linestore.GROUP_START +
+                    b'\x01\x00' + Linestore.VERSION_STMT_END + # version
+                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    Linestore.GROUP_END
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3], [4]])
