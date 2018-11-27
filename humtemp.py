@@ -65,8 +65,8 @@ def main_loop():
             measure_humidity()
 
             do_onewire_reading()
-            # sleeping at least 1 sec since the temp sensor needs time, also humidity sensor can only be
-            # read every second
+            # sleeping at least 1 sec since the temp sensor needs time, also humidity
+            # sensor can only be read every second
             sleep(1)
 
             temp_dht = read_humidity_temperature()

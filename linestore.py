@@ -4,7 +4,7 @@ from struct import pack, unpack, unpack_from, calcsize
 def _hex(data):
     return ''.join(("%02x" % ord(i)) for i in data)
 
-def _starts(buff, search):
+def _starts_with(buff, search):
     slen = len(search)
     if len(buff) < slen:
         return False
@@ -62,15 +62,27 @@ class Linestore:
         self.filepath = filepath
         self._create_file()
 
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def _create_file(self):
-        db_file = open(self.filepath, 'a')
-        db_file.close()
+        db_fp = open(self.filepath, 'a')
+        db_fp.close()
 
     def open(self):
         self.fp = open(self.filepath, 'r+b')
 
     def close(self):
         self.fp.close()
+        self.fp = None
+
+    def truncate(self):
+        db_fp = open(self.filepath, 'w')
+        db_fp.close()
 
     # version: unsiged short
     # data: [ int | long | float ]
@@ -113,7 +125,7 @@ class Linestore:
 
             index = 0
             while index < len(chunk):
-                if _starts(chunk[index:], Linestore.GROUP_START):
+                if _starts_with(chunk[index:], Linestore.GROUP_START):
                     index += Linestore.GROUP_START_LEN
                     try:
                         #print("idx read: "+ _hex(chunk[index:index+2]))
@@ -125,7 +137,7 @@ class Linestore:
 
                         index += Linestore.SIZE_H
 
-                        if not _starts(chunk[index:], Linestore.VERSION_STMT_END):
+                        if not _starts_with(chunk[index:], Linestore.VERSION_STMT_END):
                             print("version not properly terminated")
                             continue
 
@@ -144,7 +156,7 @@ class Linestore:
                 while entry_index < len(chunk):
                     #print("chunk size: "+ str(len(chunk)) +" index: " + str(index) + " entry_idx: "+ str(entry_index))
 
-                    if _starts(chunk[entry_index:], Linestore.GROUP_END):
+                    if _starts_with(chunk[entry_index:], Linestore.GROUP_END):
                         results.append(current_entry)
                         current_entry = []
                         entry_index += Linestore.GROUP_END_LEN
@@ -175,7 +187,7 @@ class Linestore:
 
                     #print("val: "+ str(unpacked_data))
 
-                    if not _starts(chunk[entry_index:], Linestore.FIELD_END):
+                    if not _starts_with(chunk[entry_index:], Linestore.FIELD_END):
                         print("entry not properly terminated")
                         break
                     entry_index += Linestore.FIELD_END_LEN
@@ -183,7 +195,4 @@ class Linestore:
                     current_entry.append(unpacked_data)
 
         return results
-
-    def _parse_line(self, line):
-        return map(float, line.split("\t"))
 

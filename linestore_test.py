@@ -145,7 +145,7 @@ class LinestoreTest(unittest.TestCase):
             spit(path, "deadbeef"+
                     b'\xFF\x00\xFF'+ # start group
                     b'\x01\x00\x02'+ # version
-                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
                     b'\xFF\x1D\xFF' # end group
             );
 
@@ -159,7 +159,7 @@ class LinestoreTest(unittest.TestCase):
             spit(path, 
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
                     Linestore.GROUP_END + # end group
                     'deadbeef'
             );
@@ -174,12 +174,12 @@ class LinestoreTest(unittest.TestCase):
             spit(path, 
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
                     b'\xFF\x1D\xFF'+ # end group
                     'deadbeef' +
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    b'i\x04\x00\x00\x00' + Linestore.FIELD_END + # value 4
                     Linestore.GROUP_END
             );
 
@@ -193,12 +193,12 @@ class LinestoreTest(unittest.TestCase):
             spit(path, 
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
                     Linestore.GROUP_END +
                     b'\xFF\x00\xEF'+ # GARBAGE similar to start grp
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    b'i\x04\x00\x00\x00' + Linestore.FIELD_END + # value 4
                     Linestore.GROUP_END
             );
 
@@ -212,15 +212,15 @@ class LinestoreTest(unittest.TestCase):
             spit(path, 
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
                     Linestore.GROUP_END +
                     Linestore.GROUP_START +
                     b'\x02\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x06\x00\x00\x00\x1E'+ # value
+                    b'i\x06\x00\x00\x00' + Linestore.FIELD_END + # value 6
                     Linestore.GROUP_END +
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    b'i\x04\x00\x00\x00' + Linestore.FIELD_END + # value 4
                     Linestore.GROUP_END
             );
 
@@ -234,15 +234,15 @@ class LinestoreTest(unittest.TestCase):
             spit(path, 
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x03\x00\x00\x00\x1E'+ # value
+                    b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
                     Linestore.GROUP_END +
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x06\x00\x00\x00\x1E'+ # value
+                    b'i\x06\x00\x00\x00' + Linestore.FIELD_END + # value 6
                     b"\xFF\x1D\xFE" +  # GARBAGE GROUP END
                     Linestore.GROUP_START +
                     b'\x01\x00' + Linestore.VERSION_STMT_END + # version
-                    b'i\x04\x00\x00\x00\x1E'+ # value
+                    b'i\x04\x00\x00\x00' + Linestore.FIELD_END + # value 4
                     Linestore.GROUP_END
             );
 
@@ -250,3 +250,25 @@ class LinestoreTest(unittest.TestCase):
             store.open()
             result = store.readlines(1)
             self.assertEqual(result, [[3], [4]])
+
+    def test_truncate(self):
+        with TempFilepath() as path:
+            spit(path,  Linestore.GROUP_START +
+                        b'\x01\x00' + Linestore.VERSION_STMT_END +
+                        b'i\x03\x00\x00\x00' + Linestore.FIELD_END + # value 3
+                        Linestore.GROUP_END
+            );
+
+            store = Linestore(path)
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [[3]])
+            store.close()
+
+            store.truncate()
+
+            store.open()
+            result = store.readlines(1)
+            self.assertEqual(result, [])
+            store.close()
+
