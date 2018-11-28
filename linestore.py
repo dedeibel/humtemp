@@ -1,8 +1,7 @@
 import os
 from struct import pack, unpack, unpack_from, calcsize
 
-def _hex(data):
-    return ''.join(("%02x" % ord(i)) for i in data)
+from util import *
 
 def _starts_with(buff, search):
     slen = len(search)
@@ -37,25 +36,25 @@ class Linestore:
     TYPES = [
         {
             'type': float,
-            'mark': 'f',
+            'mark': b'f',
             'pack': lambda fp, val: fp.write(pack('f', val)),
             'unpack': lambda buff: float(unpack_from('f', buff)[0]),
             'size': calcsize('f'),
         },
         {
             'type': int,
-            'mark': 'i',
+            'mark': b'i',
             'pack': lambda fp, val: fp.write(pack('i', val)),
             'unpack': lambda buff: int(unpack_from('i', buff)[0]),
             'size': calcsize('i'),
         },
-        {
-            'type': long,
-            'mark': 'l',
-            'pack': lambda fp, val: fp.write(pack('l', val)),
-            'unpack': lambda buff: long(unpack_from('l', buff)[0]),
-            'size': calcsize('l'),
-        },
+#        {
+#            'type': long,
+#            'mark': 'l',
+#            'pack': lambda fp, val: fp.write(pack('l', val)),
+#            'unpack': lambda buff: long(unpack_from('l', buff)[0]),
+#            'size': calcsize('l'),
+#        },
     ]
 
     def __init__(self, filepath):
@@ -117,7 +116,7 @@ class Linestore:
         while True:
             chunk = self.fp.read(Linestore.CHUNK_SIZE)
             #print("chunk len: " + str(len(chunk)))
-            #print("to read: " + _hex(chunk))
+            #print("to read: " + to_hex_str(chunk))
 
             if len(chunk) < 9:
                 # minmum size vor a valid entry
@@ -125,10 +124,11 @@ class Linestore:
 
             index = 0
             while index < len(chunk):
+                #print("test starts with at: "+ str(index))
                 if _starts_with(chunk[index:], Linestore.GROUP_START):
                     index += Linestore.GROUP_START_LEN
                     try:
-                        #print("idx read: "+ _hex(chunk[index:index+2]))
+                        #print("idx read: "+ to_hex_str(chunk[index:index+2]))
                         found_version = unpack('H', chunk[index:index + Linestore.SIZE_H])[0]
                         parsed_version = int(found_version)
                         if parsed_version != version:
@@ -167,10 +167,10 @@ class Linestore:
                         break
 
                     data_type = chunk[entry_index:entry_index + 1]
-                    #print("type: "+ _hex(data_type))
+                    #print("type: "+ to_hex_str(data_type))
                     entry_index += 1
 
-                    #print("to read: " + _hex(chunk[entry_index:]))
+                    #print("to read: " + to_hex_str(chunk[entry_index:]))
 
                     unpacked_data = None
 
@@ -182,7 +182,7 @@ class Linestore:
                             found_type = True
 
                     if not found_type:
-                        print('ERR unsupported type: ' + _hex(data_type))
+                        print('ERR unsupported type: ' + to_hex_str(data_type))
                         break
 
                     #print("val: "+ str(unpacked_data))

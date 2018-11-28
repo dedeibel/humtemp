@@ -100,8 +100,8 @@ def main():
         sys.stderr.write('cannot combine files, please use only "*" imports\n')
         sys.exit()
 
-    import_list = imports.items();
-    import_list.sort(lambda x,y: cmp(y[1], x[1]))
+    import_list = [[name, rank] for (name, rank) in imports.items()]
+    import_list = sorted(import_list, key=lambda x: x[1])
     import_list = list(map(lambda entry: entry[0] + '.py', import_list))
 
     with open(args.infile, "r") as infile:

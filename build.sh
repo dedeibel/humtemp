@@ -58,13 +58,13 @@ for i in `ls -1 *.py`; do
   mv "$i".tmp "$i"
 
   # syntax check
-  python -m py_compile "$i"
+  python3 -m py_compile "$i"
 done
 
-python ../util/includemodules.py humtemp.py humtemp.tmp
+python3 ../util/includemodules.py humtemp.py humtemp.tmp
 mv humtemp.tmp humtemp.py
 
-python -m py_compile humtemp.py
+python3 -m py_compile humtemp.py
 rm -f *.pyc
 
 #  -mcache-lookup-bc gives incompatbile mpy file msg

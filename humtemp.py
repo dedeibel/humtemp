@@ -32,15 +32,16 @@ def next_holdoff_seconds():
 # utility
 #
 
-def print_results(temp_dht, temp_maxin, humidity):
-    log_info('temp_dht: {:.1f} *C \t temp_maxin: {:.1f} *C \t humidity: {}%'.format(
-        temp_dht, temp_maxin, humidity))
+def print_results(temp_dht, humidity, temp_onewire):
+    log_info('temp_dht: {:.1f} *C\ntemp1: {:.1f} *C\ntemp2: {:.1f} *C\ntemp3: {:.1f} *C\nhumidity: {}%'.format(
+        temp_dht, temp_onewire[0], temp_onewire[1], temp_onewire[2], humidity))
 
 #
 # main
 #
 
-def should_delete_older_entries():
+def should_delete_old_entries():
+    # TODO file db size close to 4k
     return state_entry_count() >= STATE_MAX_ENTRIES
 
 def should_init_time_via_ntp():
@@ -56,7 +57,7 @@ def main_loop():
     iterations = 1
     while True:
         try:
-            if should_delete_older_entries():
+            if should_delete_old_entries():
                 delete_older_state_entries()
 
             if should_init_time_via_ntp():
@@ -70,22 +71,27 @@ def main_loop():
             sleep(1)
 
             temp_dht = read_humidity_temperature()
-            temp_maxin = read_onewire_temp_from_first_device()
+            temp_onewire = read_onewire_temp()
             humidity = read_humidity()
-            print_results(temp_dht, temp_maxin, humidity)
+            print_results(temp_dht, humidity, temp_onewire)
 
             try:
-                state_entry = build_state_entry(unix_time(), iterations, temp_dht, temp_maxin, humidity)
+                state_entry = build_state_entry(
+                        unix_time(),
+                        iterations,
+                        temp_dht,
+                        humidity,
+                        temp_onewire[0],
+                        temp_onewire[1],
+                        temp_onewire[2])
                 append_state_entry(state_entry)
-                store_state()
             except Exception as err:
                 log_error('Error storing measurments locally, ignoring. Exception: ' + str(err))
 
             if should_send_state_to_carbon():
                 try:
                     send_state_to_carbon()
-                    delete_state_entries()
-                    store_state()
+                    truncate_state()
                 except Exception as err:
                     log_error('Error sending data, ignoring. Exception: ' + str(err))
 
