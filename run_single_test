@@ -1,1 +1,0 @@
-python -m unittest linestore_test.LinestoreTest.test_validate_version

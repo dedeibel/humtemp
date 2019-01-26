@@ -1,4 +1,7 @@
 
+def pprint(obj):
+    return repr(obj)
+
 def to_hex_str(data):
-    return ''.join(("%02x" % ord(i) if type(i) == str else i) for i in data)
+    return ''.join("{0:x}".format(b) for b in data)
 

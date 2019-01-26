@@ -10,8 +10,6 @@ from humid_sensor import *
 from state import *
 from carbon import *
 
-from linestore import *
-
 #
 # error handling
 #
@@ -27,14 +25,6 @@ def next_holdoff_seconds():
     else:
         last_err_timeout_seconds *= 2
         return last_err_timeout_seconds
-
-#
-# utility
-#
-
-def print_results(temp_dht, humidity, temp_onewire):
-    log_info('temp_dht: {:.1f} *C\ntemp1: {:.1f} *C\ntemp2: {:.1f} *C\ntemp3: {:.1f} *C\nhumidity: {}%'.format(
-        temp_dht, temp_onewire[0], temp_onewire[1], temp_onewire[2], humidity))
 
 #
 # main
@@ -60,8 +50,13 @@ def main_loop():
             if should_delete_old_entries():
                 delete_older_state_entries()
 
+            time_diff = None
             if should_init_time_via_ntp():
-                init_time_via_ntp()
+                time_diff = init_time_via_ntp()
+
+            state_entry = build_state_entry(unix_time(), iterations)
+            if time_diff != None:
+                set_measurement(state_entry, "ntp_diff", time_diff)
 
             measure_humidity()
 
@@ -70,20 +65,16 @@ def main_loop():
             # sensor can only be read every second
             sleep(1)
 
-            temp_dht = read_humidity_temperature()
+            set_measurement(state_entry, "temp_dht", read_humidity_temperature())
+
             temp_onewire = read_onewire_temp()
-            humidity = read_humidity()
-            print_results(temp_dht, humidity, temp_onewire)
+            for temp_sensor, value in temp_onewire.items():
+                set_measurement(state_entry, "temp_" + temp_sensor, value)
+
+            set_measurement(state_entry, "humidity", read_humidity())
+            log_info(state_entry_to_string(state_entry))
 
             try:
-                state_entry = build_state_entry(
-                        unix_time(),
-                        iterations,
-                        temp_dht,
-                        humidity,
-                        temp_onewire[0],
-                        temp_onewire[1],
-                        temp_onewire[2])
                 append_state_entry(state_entry)
             except Exception as err:
                 log_error('Error storing measurments locally, ignoring. Exception: ' + str(err))

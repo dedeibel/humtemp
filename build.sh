@@ -16,6 +16,7 @@ export CONFIG_CARBON_HOST='seymourdata'
 export CONFIG_CARBON_PORT=2003
 # Python: True|False case matters
 export CONFIG_DEBUG_LOG_ENABLED=True
+export CARBON_DATA_PATH_PREFIX="humtemp."
 
 # for the ampy client
 export AMPY_PORT=\$CONFIG_SERIAL_DEVICE

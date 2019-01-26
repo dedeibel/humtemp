@@ -2,62 +2,85 @@ import ujson
 
 from configuration import *
 from log import *
-from linestore import *
 
 DATA_VERSION = 1
-state = []
+state = None
 
-def build_state_entry(time, iteration, temp_dht, humidity, temp1, temp2, temp3):
+def build_state_entry(time, iteration):
     return {
             'time': time,
             'iteration': iteration,
-            'temp_dht': temp_dht,
-            'humidity': humidity,
-            'temp1': temp1,
-            'temp2': temp2,
-            'temp3': temp3}
+            }
+
+def set_measurement(state_entry, name, value):
+    state_entry[name] = value
 
 def append_state_entry(state_entry):
     global state
-    state.append(state_entry)
-
-    with Linestore(STORAGE_FILENAME) as linestore:
-        linestore.append(DATA_VERSION, _export_line(state_entry))
+    state['entries'].append(state_entry)
+    _store_state()
 
 def get_state_entries():
-    return state
+    return state['entries']
 
 def state_entry_count():
-    global state
-    return len(state)
+    return len(state['entries'])
 
 def init_state():
-    log_debug('loading db state')
-    with Linestore(STORAGE_FILENAME) as linestore:
-        _import_all(linestore.readlines(DATA_VERSION))
-
+    log_debug('init state')
+    global state
+    _touch_file(STORAGE_FILENAME)
+    _load_state()
+    if not _is_version_valid():
+        state = {'version': DATA_VERSION, 'entries': []}
     log_debug('state has %d entries' % (state_entry_count()))
 
-def _import_all(line_arrays):
-    for line in line_arrays:
-        _import(line)
-
-def _import(line):
+def delete_older_state_entries():
     global state
-    state.append(
-        build_state_entry(line[0], line[1], line[2], line[3], line[4], line[5], line[6]))
+    log_debug('purging older state entries %d to %d' % (state_entry_count(), DELETE_OLDER_ELEMENTS_COUNT_IF_MAX_REACHED))
+    del state['entries'][:DELETE_OLDER_ELEMENTS_COUNT_IF_MAX_REACHED]
+    log_debug('state has %d entries' % (state_entry_count()))
 
-def _export_line(state_entry):
-    return [state_entry['time'],
-            state_entry['iteration'],
-            state_entry['temp_dht'],
-            state_entry['humidity'],
-            state_entry['temp1'],
-            state_entry['temp2'],
-            state_entry['temp3']]
+def state_entry_to_string(state_entry):
+    return ujson.dumps(state_entry)
 
 def truncate_state():
-    Linestore(STORAGE_FILENAME).truncate()
+    global state
+    state['entries'] = []
+    _store_state()
+
+def _touch_file(file_path):
+    with open(file_path, 'a') as db_file:
+        pass
+
+def _load_state():
+    global state
+    log_debug('loading db state')
+    with open(STORAGE_FILENAME, 'r+') as db_file:
+        try:
+            state = ujson.load(db_file)
+        except ValueError as ve:
+            # might happen initially, start with empty state
+            log_debug('could not read state file, will start fresh')
+
+def _is_version_valid():
+    global state
+    try:
+        if state['version'] == DATA_VERSION:
+            return True
+    except:
+        pass
+    log_debug('version invalid, starting fresh')
+    return False
+
+def _store_state():
+    global state
+    log_debug('storing current state, with %d entries' % (state_entry_count()))
+    with open(STORAGE_FILENAME, 'w+') as db_file:
+        try:
+            ujson.dump(state, db_file)
+        except Exception as e:
+            log_error('could not store state file: %s' % (str(e)))
 
 # does not obey log setting
 def print_state():

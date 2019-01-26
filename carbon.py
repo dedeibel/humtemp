@@ -26,7 +26,7 @@ def send_state_to_carbon():
                 _send_to_carbon(carbon_socket, entry)
                 successfully_sent += 1
             except Exception as err:
-                log_warning('Error sending entry, (skipping): ' + str(err))
+                log_warning('Error sending entry (skipping): ' + str(err))
 
         carbon_socket.close()
 
@@ -43,11 +43,10 @@ def send_state_to_carbon():
             raise
 
 def _send_to_carbon(carbon_socket, state_entry):
-    time = state_entry['unix_time']
-    carbon_socket.send('test.heidestock.iteration %.2f %d\n' % (state_entry['iteration'], time))
-    carbon_socket.send('test.heidestock.temp.a %.2f %d\n' % (state_entry['temp_dht'], time))
-    carbon_socket.send('test.heidestock.temp.b %.2f %d\n' % (state_entry['temp_maxin'], time))
-    carbon_socket.send('test.heidestock.humidity %.2f %d\n' % (state_entry['humidity'], time))
+    time = state_entry['time']
+    for name, values in state_entry.items():
+        carbon_socket.send('%s%s %.2f %d\n' %
+                (CARBON_DATA_PATH_PREFIX, name, state_entry[name], time))
 
 def _init_carbon_addr_info():
     global carbon_addr
