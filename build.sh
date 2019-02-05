@@ -46,13 +46,24 @@ done
 cd dist
 
 for i in `ls -1 *.py`; do
-  # use upython specific modules
+  if [[ "$i" == "boot.py" ]]; then
+    continue
+  fi
+
+  # use upython specific modules, works mostly by changing the import
+  # but using the original names allows for local unit testing
   perl -pe 's/^from struct /from ustruct /' "$i" > "$i".tmp
   mv "$i".tmp "$i"
 
-  # remove comments
+  # remove comments, save some byte
   perl -pe 's/#.*//' "$i" > "$i".tmp
   mv "$i".tmp "$i"
+
+  if [ "${CONFIG_DEBUG_LOG_ENABLED}" != "True" ]; then
+    # remove log debug statements, except the function definitions
+    perl -pe 's/(?!def )\s*log_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
+    mv "$i".tmp "$i"
+  fi
 
   # remove empty lines
   perl -ne 'print $_ if not s/^\s*\n$//' "$i" > "$i".tmp
@@ -78,8 +89,9 @@ if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
   fi
 fi
 
-SIZE=`du --block-size=1 --total humtemp.mpy main.py boot.py | tail --lines 1 | cut --fields 1`
-echo "installing to device ${AMPY_PORT} boud ${AMPY_BOUD} size $SIZE (available 40961)"
+SIZE=`wc -c humtemp.mpy main.py boot.py | tail -n 1 | awk '{print $1}'`
+USED_SIZE=`du --block-size=1 --total humtemp.mpy main.py boot.py | tail --lines 1 | cut --fields 1`
+echo "installing to device ${AMPY_PORT} boud ${AMPY_BOUD} real size ${USED_SIZE} (size ${SIZE}) free available 40961"
 
 ampy put humtemp.mpy
 ampy put main.py

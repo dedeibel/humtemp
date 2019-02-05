@@ -88,7 +88,6 @@ Is used by the build.sh script.
 
 ## Improvement Ideas
 
- - Do not even build the output strings if debug is disabled
  - Use are more robust storage format than json, maybe with some sanity or parity checks
    In case of a broken file only affected entries should be lost.
  - configration.py could be created/filled by the user now that we have multiple modules

@@ -61,7 +61,7 @@ def _load_state():
             state = ujson.load(db_file)
         except ValueError as ve:
             # might happen initially, start with empty state
-            log_debug('could not read state file, will start fresh')
+            log_info('could not read state file, will start fresh')
 
 def _is_version_valid():
     global state
