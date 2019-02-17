@@ -22,4 +22,4 @@ def init_time_via_ntp():
     return time_diff
 
 def unix_time():
-    return utime.time() + 946677735; # TODO why the difference to utc?
+    return utime.time() + 946684935; # TODO why the difference to utc?

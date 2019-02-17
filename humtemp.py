@@ -31,7 +31,6 @@ def next_holdoff_seconds():
 #
 
 def should_delete_old_entries():
-    # TODO file db size close to 4k
     return state_entry_count() >= STATE_MAX_ENTRIES
 
 def should_init_time_via_ntp():
