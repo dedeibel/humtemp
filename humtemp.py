@@ -127,6 +127,6 @@ def start():
     reset_holdoff_timer()
     blink()
     
-    log_debug('init done, starting main loop')
+    log_debug('init done, starting main loop, carbon prefix: %s' % (CARBON_DATA_PATH_PREFIX))
     main_loop()
 
