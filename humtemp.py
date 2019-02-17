@@ -57,20 +57,40 @@ def main_loop():
             if time_diff != None:
                 set_measurement(state_entry, "ntp_diff", time_diff)
 
-            measure_humidity()
+            dht22_present = False
+            try:
+                measure_humidity()
+                dht22_present = True
+            except Exception as err:
+                log_error('Could not measure dht/humidity. Exception: ' + str(err))
 
-            do_onewire_reading()
+            try:
+                do_onewire_reading()
+            except Exception as err:
+                log_error('Could not read onewire data. Exception: ' + str(err))
             # sleeping at least 1 sec since the temp sensor needs time, also humidity
             # sensor can only be read every second
             sleep(1)
+            
+            if dht22_present:
+                try:
+                    set_measurement(state_entry, "temp_dht", read_humidity_temperature())
+                except Exception as err:
+                    log_error('Could not read dht/humidity temperature. Exception: ' + str(err))
 
-            set_measurement(state_entry, "temp_dht", read_humidity_temperature())
+            try:
+                temp_onewire = read_onewire_temp()
+                for temp_sensor, value in temp_onewire.items():
+                    set_measurement(state_entry, "temp_" + temp_sensor, value)
+            except Exception as err:
+                log_error('Could not read onewire temperature. Exception: ' + str(err))
 
-            temp_onewire = read_onewire_temp()
-            for temp_sensor, value in temp_onewire.items():
-                set_measurement(state_entry, "temp_" + temp_sensor, value)
+            if dht22_present:
+                try:
+                    set_measurement(state_entry, "humidity", read_humidity())
+                except Exception as err:
+                    log_error('Could not read dht/humidity humidity. Exception: ' + str(err))
 
-            set_measurement(state_entry, "humidity", read_humidity())
             log_info(state_entry_to_string(state_entry))
 
             try:
