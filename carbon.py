@@ -1,4 +1,4 @@
-import socket
+import usocket
 import uerrno
 
 from configuration import *
@@ -18,8 +18,9 @@ def send_state_to_carbon():
 
         state_entries = get_state_entries()
 
-        carbon_socket = socket.socket()
-        carbon_socket.connect(carbon_addr)
+        # TCP if you like
+        carbon_socket = usocket.socket(carbon_addr[0], carbon_addr[1], carbon_addr[2])
+        carbon_socket.connect(carbon_addr[4])
         
         for entry in state_entries:
             try:
@@ -45,17 +46,16 @@ def send_state_to_carbon():
 def _send_to_carbon(carbon_socket, state_entry):
     time = state_entry['time']
     for name, values in state_entry.items():
-        carbon_socket.send('%s%s %.2f %d\n' %
-                (CARBON_DATA_PATH_PREFIX, name, state_entry[name], time))
+        carbon_socket.write(
+            '%s%s %.2f %d\n' % (CARBON_DATA_PATH_PREFIX, name, state_entry[name], time))
 
 def _init_carbon_addr_info():
+    global carbon_af
     global carbon_addr
     if carbon_addr != None:
         log_debug('carbon addr already present, skipping init')
         return
 
-    carbon_addr_info = socket.getaddrinfo(CARBON_HOST, CARBON_PORT)
+    carbon_addr = usocket.getaddrinfo(CARBON_HOST, CARBON_PORT, usocket.SOCK_DGRAM)[0]
     # OS Error 2 here means host not found / resolvable
-
-    carbon_addr = carbon_addr_info[0][-1]
     log_debug('init addr info done, sending data to ' + CARBON_HOST + ':' + str(CARBON_PORT))
