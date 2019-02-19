@@ -18,7 +18,6 @@ def set_measurement(state_entry, name, value):
 def append_state_entry(state_entry):
     global state
     state['entries'].append(state_entry)
-    _store_state()
 
 def get_state_entries():
     return state['entries']
@@ -47,7 +46,7 @@ def state_entry_to_string(state_entry):
 def truncate_state():
     global state
     state['entries'] = []
-    _store_state()
+    store_state()
 
 def _touch_file(file_path):
     with open(file_path, 'a') as db_file:
@@ -73,7 +72,7 @@ def _is_version_valid():
     log_debug('version invalid, starting fresh')
     return False
 
-def _store_state():
+def store_state():
     global state
     log_debug('storing current state, with %d entries' % (state_entry_count()))
     with open(STORAGE_FILENAME, 'w+') as db_file:

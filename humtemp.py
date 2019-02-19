@@ -106,6 +106,7 @@ def main_loop():
                     log_error('Error sending data, ignoring. Exception: ' + str(err))
 
             if should_go_to_deepsleep():
+                store_state()
                 deepsleep()
 
             reset_holdoff_timer()
