@@ -111,7 +111,8 @@ def main_loop():
 
             reset_holdoff_timer()
 
-            sleep(SECONDS_BETWEEN_MEASUREMENTS)
+            if SECONDS_BETWEEN_MEASUREMENTS > 0:
+                sleep(SECONDS_BETWEEN_MEASUREMENTS)
         except Exception as err:
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds): %s' % (timeout_seconds, str(err)))

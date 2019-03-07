@@ -2,8 +2,8 @@
 DHT22_PIN = 12
 TEMP_SENSOR_PIN = 13
 
-ENTRIES_MEASURE_BATCH_SIZE = 3
-SECONDS_BETWEEN_MEASUREMENTS = 3
+ENTRIES_MEASURE_BATCH_SIZE = 1
+SECONDS_BETWEEN_MEASUREMENTS = 0
 
 # Max is about 3:30h https://thingpulse.com/max-deep-sleep-for-esp8266/
 # 298: 5 Minutes, minus startup
