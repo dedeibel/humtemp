@@ -13,14 +13,14 @@ ENTRIES_SEND_BATCH_SIZE = ENTRIES_MEASURE_BATCH_SIZE * 12
 # ntp refresh in the same run as sending data so wifi is only initialized in that loop
 # ntp is setup before the measurements so substract those values, sending is done
 # after the measurements.
-NTP_REFRESH_EACH_N_ITERATIONS = ENTRIES_SEND_BATCH_SIZE - ENTRIES_MEASURE_BATCH_SIZE
+NTP_REFRESH_EACH_N_ITERATIONS = min(5, ENTRIES_SEND_BATCH_SIZE - ENTRIES_MEASURE_BATCH_SIZE)
 # dates are utc btw.
 # TODO rename to "_N_ENTRIES"
 
 ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS = 60
 
-# Approx 117 bytes per entry, 135 Entries are < 16k (4 Blocks)
-STATE_MAX_ENTRIES = 115
+# At about 100 entries I got OOM messages when connecting to wifi on the same run
+STATE_MAX_ENTRIES = 80
 # When sending fails, old entries are kept. delete on overflow
 DELETE_OLDER_ELEMENTS_COUNT_IF_MAX_REACHED = 30
 
@@ -38,4 +38,4 @@ STORAGE_FILENAME = 'db.dat'
 # Faster times, use it to debug the cycle ...
 #NTP_REFRESH_EACH_N_ITERATIONS = 1
 #DEEPSLEEP_SECONDS = 5
-#ENTRIES_SEND_BATCH_SIZE = 5
+#ENTRIES_SEND_BATCH_SIZE = 2

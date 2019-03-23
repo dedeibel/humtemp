@@ -6,14 +6,19 @@ from log import *
 DATA_VERSION = 1
 state = None
 
+# state entries contain tag info and values
+# source.measurement => value
 def build_state_entry(time, iteration):
     return {
-            'time': time,
-            'iteration': iteration,
+            'meta.time': time,
+            'meta.iteration': iteration,
             }
 
-def set_measurement(state_entry, name, value):
-    state_entry[name] = value
+def set_measurement(state_entry, sensor, measurement, value):
+    state_entry[sensor +'.'+ measurement] = value
+
+def set_meta(state_entry, name, value):
+    state_entry['meta.'+ name] = value
 
 def append_state_entry(state_entry):
     global state

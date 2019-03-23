@@ -34,13 +34,13 @@ def should_delete_old_entries():
     return state_entry_count() >= STATE_MAX_ENTRIES
 
 def should_init_time_via_ntp():
-    return state_entry_count() % NTP_REFRESH_EACH_N_ITERATIONS == 0
+    return (state_entry_count() % NTP_REFRESH_EACH_N_ITERATIONS) == 0
 
 def should_send_state_to_carbon():
-    return state_entry_count() % ENTRIES_SEND_BATCH_SIZE == 0 or state_entry_count() >= STATE_MAX_ENTRIES
+    return (state_entry_count() % ENTRIES_SEND_BATCH_SIZE) == 0 or state_entry_count() >= STATE_MAX_ENTRIES
 
 def should_go_to_deepsleep():
-    return state_entry_count() % ENTRIES_MEASURE_BATCH_SIZE == 0
+    return (state_entry_count() % ENTRIES_MEASURE_BATCH_SIZE) == 0
 
 def main_loop():
     iterations = 1
@@ -55,7 +55,7 @@ def main_loop():
 
             state_entry = build_state_entry(unix_time(), iterations)
             if time_diff != None:
-                set_measurement(state_entry, "ntp_diff", time_diff)
+                set_meta(state_entry, "ntp_diff", time_diff)
 
             dht22_present = False
             try:
@@ -74,20 +74,20 @@ def main_loop():
             
             if dht22_present:
                 try:
-                    set_measurement(state_entry, "temp_dht", read_humidity_temperature())
+                    set_measurement(state_entry, "dht22", "temp", read_humidity_temperature())
                 except Exception as err:
                     log_error('Could not read dht/humidity temperature. Exception: ' + str(err))
 
             try:
                 temp_onewire = read_onewire_temp()
                 for temp_sensor, value in temp_onewire.items():
-                    set_measurement(state_entry, "temp_" + temp_sensor, value)
+                    set_measurement(state_entry, "temp_" + temp_sensor, "temp", value)
             except Exception as err:
                 log_error('Could not read onewire temperature. Exception: ' + str(err))
 
             if dht22_present:
                 try:
-                    set_measurement(state_entry, "humidity", read_humidity())
+                    set_measurement(state_entry, "dht22", "humidity", read_humidity())
                 except Exception as err:
                     log_error('Could not read dht/humidity humidity. Exception: ' + str(err))
 

@@ -18,8 +18,12 @@ def send_state_to_carbon():
 
         state_entries = get_state_entries()
 
-        # TCP if you like
-        carbon_socket = usocket.socket(carbon_addr[0], carbon_addr[1], carbon_addr[2])
+        # udp
+        carbon_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
+        # tcp
+        # arbon_socket = socket(AF_INET, SOCK_STREAM)
+        # auto select by addr but will use tcp ignoring dgram setting
+        # carbon_socket = usocket.socket(carbon_addr[0], carbon_addr[1], carbon_addr[2])
         carbon_socket.connect(carbon_addr[4])
         
         for entry in state_entries:
@@ -44,10 +48,19 @@ def send_state_to_carbon():
             raise
 
 def _send_to_carbon(carbon_socket, state_entry):
-    time = state_entry['time']
-    for name, values in state_entry.items():
-        carbon_socket.write(
-            '%s%s %.2f %d\n' % (CARBON_DATA_PATH_PREFIX, name, state_entry[name], time))
+    time = state_entry['meta.time']
+    for name, value in state_entry.items():
+        _send_all(carbon_socket,
+            '%s%s %.2f %d\n' % (CARBON_DATA_PATH_PREFIX, name, value, time))
+
+def _send_all(socket, msg):
+    msglen = len(msg);
+    totalsent = 0
+    while totalsent < msglen:
+        sent = socket.send(msg[totalsent:])
+        if sent == 0:
+            raise RuntimeError("Socket connection broken")
+        totalsent = totalsent + sent
 
 def _init_carbon_addr_info():
     global carbon_af
