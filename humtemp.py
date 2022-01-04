@@ -31,17 +31,14 @@ def next_holdoff_seconds():
 # main
 #
 
-def should_delete_old_entries():
-    return state_entry_count() >= STATE_MAX_ENTRIES
-
 def should_init_time_via_ntp():
-    return (state_entry_count() % NTP_REFRESH_EACH_N_ITERATIONS) == 0
+    return NTP_UPDATE_TIME == True
 
 def should_send_state_to_carbon():
-    return (state_entry_count() % ENTRIES_SEND_BATCH_SIZE) == 0 or state_entry_count() >= STATE_MAX_ENTRIES
+    return (state_entry_count() % ENTRIES_SEND_BATCH_SIZE) == 0
 
-def should_go_to_deepsleep():
-    return (state_entry_count() % ENTRIES_MEASURE_BATCH_SIZE) == 0
+def should_go_to_deepsleep(iterations):
+    return DEEPSLEEP_AFTER_ITERATIONS > 0 and (iterations % DEEPSLEEP_AFTER_ITERATIONS) == 0
 
 def main_loop():
     wdt = WDT()
@@ -50,12 +47,9 @@ def main_loop():
     while True:
         try:
             wdt.feed()
-            blink()
-            wdt.feed()
 
-            if should_delete_old_entries():
-                delete_older_state_entries()
-
+            # Note: Could and probably should be remove in case we send the data
+            # directly to the server
             time_diff = None
             if should_init_time_via_ntp():
                 time_diff = init_time_via_ntp()
@@ -121,14 +115,15 @@ def main_loop():
 
             wdt.feed()
 
-            if should_go_to_deepsleep():
-                store_state()
+            if should_go_to_deepsleep(iterations):
                 deepsleep()
 
             reset_holdoff_timer()
 
             if SECONDS_BETWEEN_MEASUREMENTS > 0:
-                sleep(SECONDS_BETWEEN_MEASUREMENTS)
+                for _ in range(SECONDS_BETWEEN_MEASUREMENTS - 1):
+                    wdt.feed()
+                    sleep(1)
         except Exception as err:
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds): %s' % (timeout_seconds, str(err)))

@@ -72,3 +72,4 @@ def _init_carbon_addr_info():
     carbon_addr = usocket.getaddrinfo(CARBON_HOST, CARBON_PORT, usocket.SOCK_DGRAM)[0]
     # OS Error 2 here means host not found / resolvable
     log_debug('init addr info done, sending data to ' + CARBON_HOST + ':' + str(CARBON_PORT))
+

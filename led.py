@@ -10,7 +10,7 @@ def led_off():
     ledpin.value(1)
 
 def blink():
-    for _ in range(3):
+    for _ in range(2):
         led_on()
         sleep(0.3)
         led_off()
