@@ -1,0 +1,8 @@
+# copy to ESP
+ampy --port /dev/ttyUSB0 put util/mpyversion.py
+
+# run it
+ampy --port /dev/ttyUSB0 run util/mpyversion.py
+
+mpy version: 5
+mpy flags: -march=xtensa
