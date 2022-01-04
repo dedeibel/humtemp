@@ -9,6 +9,7 @@ from temp_sensor import *
 from humid_sensor import *
 from state import *
 from carbon import *
+from machine import WDT
 
 #
 # error handling
@@ -43,9 +44,15 @@ def should_go_to_deepsleep():
     return (state_entry_count() % ENTRIES_MEASURE_BATCH_SIZE) == 0
 
 def main_loop():
+    wdt = WDT()
+    wdt.feed()
     iterations = 1
     while True:
         try:
+            wdt.feed()
+            blink()
+            wdt.feed()
+
             if should_delete_old_entries():
                 delete_older_state_entries()
 
@@ -68,9 +75,14 @@ def main_loop():
                 do_onewire_reading()
             except Exception as err:
                 log_error('Could not read onewire data. Exception: ' + str(err))
+
+            wdt.feed()
+
             # sleeping at least 1 sec since the temp sensor needs time, also humidity
             # sensor can only be read every second
             sleep(1)
+
+            wdt.feed()
             
             if dht22_present:
                 try:
@@ -93,6 +105,8 @@ def main_loop():
 
             log_info(state_entry_to_string(state_entry))
 
+            wdt.feed()
+
             try:
                 append_state_entry(state_entry)
             except Exception as err:
@@ -104,6 +118,8 @@ def main_loop():
                     truncate_state()
                 except Exception as err:
                     log_error('Error sending data, ignoring. Exception: ' + str(err))
+
+            wdt.feed()
 
             if should_go_to_deepsleep():
                 store_state()
