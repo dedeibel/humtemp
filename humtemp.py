@@ -44,14 +44,15 @@ def should_go_to_deepsleep(iterations):
     return DEEPSLEEP_AFTER_ITERATIONS > 0 and (iterations % DEEPSLEEP_AFTER_ITERATIONS) == 0
 
 def main_loop():
+    # Note: Could and probably should be remove in case we send the data
+    # directly to the server
+    time_diff = None
+    if should_init_time_via_ntp():
+        time_diff = init_time_via_ntp()
+
     iterations = 1
     while True:
         try:
-            # Note: Could and probably should be remove in case we send the data
-            # directly to the server
-            time_diff = None
-            if should_init_time_via_ntp():
-                time_diff = init_time_via_ntp()
             blink_debug(3)
 
             state_entry = build_state_entry(unix_time(), iterations)
