@@ -41,13 +41,9 @@ def should_go_to_deepsleep(iterations):
     return DEEPSLEEP_AFTER_ITERATIONS > 0 and (iterations % DEEPSLEEP_AFTER_ITERATIONS) == 0
 
 def main_loop():
-    wdt = WDT()
-    wdt.feed()
     iterations = 1
     while True:
         try:
-            wdt.feed()
-
             # Note: Could and probably should be remove in case we send the data
             # directly to the server
             time_diff = None
@@ -73,7 +69,6 @@ def main_loop():
             except Exception as err:
                 log_error('Could not read onewire data. Exception: ' + str(err))
 
-            wdt.feed()
             blink_debug()
             log_debug('sleeping to allow sensors to init')
 
@@ -81,8 +76,6 @@ def main_loop():
             # sensor can only be read every second
             sleep(1)
 
-            wdt.feed()
-            
             if dht22_present:
                 try:
                     set_measurement(state_entry, "dht22", "temp", read_humidity_temperature())
@@ -104,7 +97,6 @@ def main_loop():
 
             log_info(state_entry_to_string(state_entry))
 
-            wdt.feed()
             blink_debug()
 
             try:
@@ -122,7 +114,6 @@ def main_loop():
                 except Exception as err:
                     log_error('Error sending data, ignoring. Exception: ' + str(err))
 
-            wdt.feed()
             blink_debug()
 
             if should_go_to_deepsleep(iterations):
@@ -134,7 +125,6 @@ def main_loop():
             if SECONDS_BETWEEN_MEASUREMENTS > 0:
                 log_debug('sleeping between measurements for seconds: ' + str(SECONDS_BETWEEN_MEASUREMENTS))
                 for _ in range(SECONDS_BETWEEN_MEASUREMENTS - 1):
-                    wdt.feed()
                     sleep(1)
         except Exception as err:
             timeout_seconds = next_holdoff_seconds()
