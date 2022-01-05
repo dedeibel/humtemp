@@ -1,3 +1,4 @@
+import errno
 from time import sleep
 
 from configuration import *
@@ -9,11 +10,13 @@ from temp_sensor import *
 from humid_sensor import *
 from state import *
 from carbon import *
-from machine import WDT
+from battery import *
 
 #
 # error handling
 #
+
+last_err_timeout_seconds = 1
 
 def reset_holdoff_timer():
     global last_err_timeout_seconds
@@ -126,6 +129,12 @@ def main_loop():
                 log_debug('sleeping between measurements for seconds: ' + str(SECONDS_BETWEEN_MEASUREMENTS))
                 for _ in range(SECONDS_BETWEEN_MEASUREMENTS - 1):
                     sleep(1)
+        except OSError as err:
+            exerrno = err.errno
+            errnomsg = errno.errorcode[exerrno]
+            timeout_seconds = next_holdoff_seconds()
+            log_error('Error in mainloop! (sleeping for %d seconds) errno: %d errnomsg: %s excpt: %s' % (timeout_seconds, exerrno, errnomsg, str(err)))
+            sleep(timeout_seconds)
         except Exception as err:
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds): %s' % (timeout_seconds, str(err)))

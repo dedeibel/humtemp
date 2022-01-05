@@ -1,5 +1,6 @@
 import utime
 import ntptime
+import errno
 
 from log import *
 from wifi import *
@@ -13,13 +14,22 @@ def init_time_via_ntp():
     log_debug('init time via ntp')
     init_wifi()
 
-    time_before = utime.time()
+    for _ in range(2):
+        try:
+            time_before = utime.time()
 
-    ntptime.settime()
+            ntptime.settime()
 
-    time_diff = utime.time() - time_before
-    log_debug('time is: %s (diff after ntp call %d)' % (strftime(), time_diff))
-    return time_diff
+            time_diff = utime.time() - time_before
+            log_debug('time is: %s (diff after ntp call %d)' % (strftime(), time_diff))
+            return time_diff
+        except OSError as err:
+            exerrno = err.errno
+            errnomsg = errno.errorcode[exerrno]
+            timeout_seconds = next_holdoff_seconds()
+            log_error('Error in mainloop! (sleeping for %d seconds) errno: %d errnomsg: %s excpt: %s' % (timeout_seconds, exerrno, errnomsg, str(err)))
+            sleep(0.3)
+    raise Exception("Could not ini time via ntp")
 
 def unix_time():
     return utime.time() + 946684935; # TODO why the difference to utc?
