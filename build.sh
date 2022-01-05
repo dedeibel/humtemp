@@ -63,6 +63,9 @@ for i in `ls -1 *.py`; do
     # remove log debug statements, except the function definitions
     perl -pe 's/(?!def )\s*log_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
     mv "$i".tmp "$i"
+
+    perl -pe 's/(?!def )\s*blink_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
+    mv "$i".tmp "$i"
   fi
 
   # remove empty lines

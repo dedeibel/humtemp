@@ -53,6 +53,7 @@ def main_loop():
             time_diff = None
             if should_init_time_via_ntp():
                 time_diff = init_time_via_ntp()
+            blink_debug(3)
 
             state_entry = build_state_entry(unix_time(), iterations)
             if time_diff != None:
@@ -65,12 +66,16 @@ def main_loop():
             except Exception as err:
                 log_error('Could not measure dht/humidity. Exception: ' + str(err))
 
+            blink_debug()
+
             try:
                 do_onewire_reading()
             except Exception as err:
                 log_error('Could not read onewire data. Exception: ' + str(err))
 
             wdt.feed()
+            blink_debug()
+            log_debug('sleeping to allow sensors to init')
 
             # sleeping at least 1 sec since the temp sensor needs time, also humidity
             # sensor can only be read every second
@@ -100,27 +105,34 @@ def main_loop():
             log_info(state_entry_to_string(state_entry))
 
             wdt.feed()
+            blink_debug()
 
             try:
                 append_state_entry(state_entry)
             except Exception as err:
                 log_error('Error storing measurments locally, ignoring. Exception: ' + str(err))
 
+            blink_debug()
+
             if should_send_state_to_carbon():
                 try:
+                    blink_debug(state_entry_count())
                     send_state_to_carbon()
                     truncate_state()
                 except Exception as err:
                     log_error('Error sending data, ignoring. Exception: ' + str(err))
 
             wdt.feed()
+            blink_debug()
 
             if should_go_to_deepsleep(iterations):
+                blink_debug(6)
                 deepsleep()
 
             reset_holdoff_timer()
 
             if SECONDS_BETWEEN_MEASUREMENTS > 0:
+                log_debug('sleeping between measurements for seconds: ' + str(SECONDS_BETWEEN_MEASUREMENTS))
                 for _ in range(SECONDS_BETWEEN_MEASUREMENTS - 1):
                     wdt.feed()
                     sleep(1)
