@@ -44,8 +44,7 @@ def should_go_to_deepsleep(iterations):
     return DEEPSLEEP_AFTER_ITERATIONS > 0 and (iterations % DEEPSLEEP_AFTER_ITERATIONS) == 0
 
 def main_loop():
-    # Note: Could and probably should be remove in case we send the data
-    # directly to the server
+    # Temporarily: for measuring if setting ntp time after each deep sleep is required
     time_diff = None
     if should_init_time_via_ntp():
         time_diff = init_time_via_ntp()
@@ -54,8 +53,8 @@ def main_loop():
     while True:
         try:
             blink_debug(3)
-
             state_entry = build_state_entry(unix_time(), iterations)
+            # Temporarily: for measuring if setting ntp time after each deep sleep is required
             if time_diff != None:
                 set_meta(state_entry, "ntp_diff", time_diff)
 
@@ -103,7 +102,6 @@ def main_loop():
 
             if READ_BATTERY_FROM_ADC:
                 log_debug('reading battery voltage')
-
                 battery_voltage_raw = read_battery_voltage_raw()
                 battery_voltage = raw_to_battery_voltage(battery_voltage_raw)
                 log_debug('battery voltage raw: ' + str(battery_voltage_raw) + ' battery voltage: '+ str(battery_voltage));
@@ -113,7 +111,8 @@ def main_loop():
             set_measurement(state_entry, "adc0", "voltage", battery_voltage_raw)
             set_measurement(state_entry, "battery", "voltage", battery_voltage)
 
-            log_info(state_entry_to_string(state_entry))
+            if DEBUG_LOG_ENABLED:
+                log(state_entry_to_string(state_entry))
 
             try:
                 append_state_entry(state_entry)
@@ -157,6 +156,8 @@ def main_loop():
             iterations += 1
 
 def start():
+    log_debug("")
+    log_debug("")
     init_deepsleep()
     init_temp_sensor()
     init_humid_sensor()
@@ -164,7 +165,7 @@ def start():
     if READ_BATTERY_FROM_ADC:
         init_battery()
     reset_holdoff_timer()
-    blink()
+    blink_debug()
     
     log_debug('init done, starting main loop, carbon prefix: %s' % (CARBON_DATA_PATH_PREFIX))
     main_loop()

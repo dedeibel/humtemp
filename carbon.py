@@ -35,7 +35,7 @@ def send_state_to_carbon():
 
         carbon_socket.close()
 
-        log_info('sent %d entries to carbon server' % successfully_sent)
+        log_debug('sent %d entries to carbon server' % successfully_sent)
 
         if successfully_sent == 0:
             raise ValueError('Could not send any entries to carbon, see previous errors')
