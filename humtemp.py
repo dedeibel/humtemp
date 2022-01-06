@@ -105,11 +105,9 @@ def main_loop():
                 battery_voltage_raw = read_battery_voltage_raw()
                 battery_voltage = raw_to_battery_voltage(battery_voltage_raw)
                 log_debug('battery voltage raw: ' + str(battery_voltage_raw) + ' battery voltage: '+ str(battery_voltage));
-
-            blink_debug()
-
-            set_measurement(state_entry, "adc0", "voltage", battery_voltage_raw)
-            set_measurement(state_entry, "battery", "voltage", battery_voltage)
+                blink_debug()
+                set_measurement(state_entry, "adc0", "voltage", battery_voltage_raw)
+                set_measurement(state_entry, "battery", "voltage", battery_voltage)
 
             if DEBUG_LOG_ENABLED:
                 log(state_entry_to_string(state_entry))
