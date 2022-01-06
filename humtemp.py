@@ -131,6 +131,7 @@ def main_loop():
 
             if should_go_to_deepsleep(iterations):
                 blink_debug(6)
+                wifi_disconnect()
                 deepsleep()
 
             reset_holdoff_timer()
