@@ -25,6 +25,7 @@ HERE
   exit 1
 fi
 
+echo "reading config file"
 . config
 
 if [ -z "$CONFIG_SERIAL_DEVICE" ]; then
@@ -34,6 +35,7 @@ fi
 
 [ -e dist ] || mkdir dist
 
+echo "substituting config values"
 # substitute config values
 for i in `ls -1 *.py`; do
   [[ "$i" =~ ^.*_test.py$ ]] && continue
@@ -46,42 +48,51 @@ done
 cd dist
 
 for i in `ls -1 *.py`; do
+  # do nothing to boot.py
   if [[ "$i" == "boot.py" ]]; then
     continue
   fi
 
+  echo "- ${i}: replacing some module imports with upython variants"
   # use upython specific modules, works mostly by changing the import
   # but using the original names allows for local unit testing
   perl -pe 's/^from struct /from ustruct /' "$i" > "$i".tmp
   mv "$i".tmp "$i"
 
+  echo "- ${i}: remove comments"
   # remove comments, save some byte
   perl -pe 's/#.*//' "$i" > "$i".tmp
   mv "$i".tmp "$i"
 
   if [ "${CONFIG_DEBUG_LOG_ENABLED}" != "True" ]; then
+    echo "- ${i}: removing log_debug statements"
     # remove log debug statements, except the function definitions
     perl -pe 's/(?!def )\s*log_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
     mv "$i".tmp "$i"
 
+    echo "- ${i}: removing blink_debug statements"
     perl -pe 's/(?!def )\s*blink_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
     mv "$i".tmp "$i"
   fi
 
   # remove empty lines
+  echo "- ${i}: remove empty lines"
   perl -ne 'print $_ if not s/^\s*\n$//' "$i" > "$i".tmp
   mv "$i".tmp "$i"
 
-  # syntax check
+  echo "- ${i}: checking python syntax (py_compile)"
   python3 -m py_compile "$i"
 done
 
+echo "include all sub modules in humtemp module"
 python3 ../util/includemodules.py humtemp.py humtemp.tmp
 mv humtemp.tmp humtemp.py
 
+echo "rechecking python syntax (py_compile)"
 python3 -m py_compile humtemp.py
 rm -f *.pyc
 
+echo "compile humtemp using mpy-cross"
 #  -mcache-lookup-bc gives incompatbile mpy file msg
 mpy-cross -O2 -o humtemp.mpy humtemp.py
 
@@ -96,6 +107,10 @@ SIZE=`wc -c humtemp.mpy main.py boot.py | tail -n 1 | awk '{print $1}'`
 USED_SIZE=`du --block-size=1 --total humtemp.mpy main.py boot.py | tail --lines 1 | cut --fields 1`
 echo "installing to device ${AMPY_PORT} boud ${AMPY_BOUD} real size ${USED_SIZE} (size ${SIZE}) free available 40961"
 
+echo "- humtemp.mpy"
 ampy put humtemp.mpy
+echo "- main.py"
 ampy put main.py
+echo "- boot.py"
 ampy put boot.py
+echo "done"
