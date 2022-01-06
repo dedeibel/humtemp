@@ -21,7 +21,7 @@ def init_deepsleep():
     log_debug('init deepsleep done')
 
 def deepsleep():
-    log_info('going to deepsleep for: %d time is: %ds: %s' % (DEEPSLEEP_SECONDS * 1000, unix_time(), strftime()))
+    log_info('going to deepsleep for: %d current time is: %ds: %s' % (DEEPSLEEP_SECONDS * 1000, unix_time(), strftime()))
     # set RTC.ALARM0 to fire after 10 seconds (waking the device)
     rtc.alarm(rtc.ALARM0, DEEPSLEEP_SECONDS * 1000)
     machine.deepsleep()
