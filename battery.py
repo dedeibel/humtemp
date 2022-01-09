@@ -5,11 +5,13 @@ adc = None
 # As per spec https://docs.micropython.org/en/latest/esp8266/quickref.html#adc-analog-to-digital-conversion
 # 0 to value is available
 adc_max_val = 1024
+# 4.3 devided 47k to 10k, => 0.7543859649
+adc_max_val_expected = 772
 
 # Max seen value empirical using 3xAA
 bat_max_expected_voltage = 4.3
-# 4.3 devided 47k to 10k, => 0.7543859649
-adc_max_val_expected = 772
+adc_min_working_val = 0.65 # by experiment
+bat_min_working_voltage = 3.71 # derived from adc_min_working_val
 
 adc_factor = 1.0 / (adc_max_val + 1)
 adc_bat_factor = adc_max_val / adc_max_val_expected
