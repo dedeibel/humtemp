@@ -49,6 +49,7 @@ def main_loop():
     if should_init_time_via_ntp():
         time_diff = init_time_via_ntp()
 
+    error_count = 0
     iterations = 1
     while True:
         try:
@@ -63,6 +64,7 @@ def main_loop():
                 measure_humidity()
                 dht22_present = True
             except Exception as err:
+                error_count += 1
                 log_error('Could not measure dht/humidity. Exception: ' + str(err))
 
             blink_debug()
@@ -70,6 +72,7 @@ def main_loop():
             try:
                 do_onewire_reading()
             except Exception as err:
+                error_count += 1
                 log_error('Could not read onewire data. Exception: ' + str(err))
 
             blink_debug()
@@ -83,6 +86,7 @@ def main_loop():
                 try:
                     set_measurement(state_entry, "dht22", "temp", read_humidity_temperature())
                 except Exception as err:
+                    error_count += 1
                     log_error('Could not read dht/humidity temperature. Exception: ' + str(err))
 
             try:
@@ -90,24 +94,33 @@ def main_loop():
                 for temp_sensor, value in temp_onewire.items():
                     set_measurement(state_entry, "temp_" + temp_sensor, "temp", value)
             except Exception as err:
+                error_count += 1
                 log_error('Could not read onewire temperature. Exception: ' + str(err))
 
             if dht22_present:
                 try:
                     set_measurement(state_entry, "dht22", "humidity", read_humidity())
                 except Exception as err:
+                    error_count += 1
                     log_error('Could not read dht/humidity humidity. Exception: ' + str(err))
 
             log_debug('finished measurements')
 
             if READ_BATTERY_FROM_ADC:
-                log_debug('reading battery voltage')
-                battery_voltage_raw = read_battery_voltage_raw()
-                battery_voltage = raw_to_battery_voltage(battery_voltage_raw)
-                log_debug('battery voltage raw: ' + str(battery_voltage_raw) + ' battery voltage: '+ str(battery_voltage));
-                blink_debug()
-                set_measurement(state_entry, "adc0", "voltage", battery_voltage_raw)
-                set_measurement(state_entry, "battery", "voltage", battery_voltage)
+                try:
+                    log_debug('reading battery voltage')
+                    battery_voltage_raw = read_battery_voltage_raw()
+                    battery_voltage = raw_to_battery_voltage(battery_voltage_raw)
+                    log_debug('battery voltage raw: ' + str(battery_voltage_raw) + ' battery voltage: '+ str(battery_voltage));
+                    blink_debug()
+                    set_measurement(state_entry, "adc0", "voltage", battery_voltage_raw)
+                    set_measurement(state_entry, "battery", "voltage", battery_voltage)
+                except Exception as err:
+                    error_count += 1
+                    log_error('Could not read battery voltage. Exception: ' + str(err))
+
+            set_meta(state_entry, "error_count", error_count)
+            error_count = 0
 
             if DEBUG_LOG_ENABLED:
                 log(state_entry_to_string(state_entry))
@@ -115,6 +128,7 @@ def main_loop():
             try:
                 append_state_entry(state_entry)
             except Exception as err:
+                error_count += 1
                 log_error('Error storing measurments locally, ignoring. Exception: ' + str(err))
 
             blink_debug()
@@ -125,6 +139,9 @@ def main_loop():
                     send_state_to_carbon()
                     truncate_state()
                 except Exception as err:
+                    # error_count is sent at this point - but keep counting in
+                    # case of multiple iteration it will show up
+                    error_count += 1
                     log_error('Error sending data, ignoring. Exception: ' + str(err))
 
             blink_debug()
@@ -141,12 +158,14 @@ def main_loop():
                 for _ in range(SECONDS_BETWEEN_MEASUREMENTS - 1):
                     sleep(1)
         except OSError as err:
+            error_count += 1
             exerrno = err.errno
             errnomsg = errno.errorcode[exerrno]
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds) errno: %d errnomsg: %s excpt: %s' % (timeout_seconds, exerrno, errnomsg, str(err)))
             sleep(timeout_seconds)
         except Exception as err:
+            error_count += 1
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds): %s' % (timeout_seconds, str(err)))
             # Errno 110 ETIMEOUT might be a sensor is not available or responding, check cables
