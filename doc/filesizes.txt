@@ -1,0 +1,15 @@
+original
+installing to device /dev/ttyUSB0 boud 460800 real size 20480 (size 9242) free available 40961
+
+pass
+installing to device /dev/ttyUSB0 boud 460800 real size 20480 (size 8520) free available 40961
+
+with empty lines
+installing to device /dev/ttyUSB0 boud 460800 real size 20480 (size 8538) free available 40961
+
+with comments (and empty lines)
+installing to device /dev/ttyUSB0 boud 460800 real size 20480 (size 8528) free available 40961
+
+with ints config a constants
+installing to device /dev/ttyUSB0 boud 460800 real size 20480 (size 8411) free available 40961
+
