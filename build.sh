@@ -90,8 +90,16 @@ python3 -m py_compile humtemp.py
 rm -f *.pyc
 
 echo "compile humtemp using mpy-cross"
-#  -mcache-lookup-bc gives incompatbile mpy file msg
-mpy-cross -O2 -o humtemp.mpy humtemp.py
+
+# Using mpyversion.py:
+# mpy version: 5
+# mpy flags: -march=xtensa
+
+mpy-cross --version
+
+mpy-cross -march=xtensa -O3 -o humtemp.mpy humtemp.py
+# -mcache-lookup-bc gives incompatbile mpy file msg
+# -mno-unicode gives incompatbile mpy file msg
 
 # duck the screen terminal
 if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
