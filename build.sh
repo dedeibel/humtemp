@@ -33,7 +33,8 @@ if [ -z "$CONFIG_SERIAL_DEVICE" ]; then
   exit 1
 fi
 
-[ -e dist ] || mkdir dist
+rm -rf dist
+mkdir dist
 
 echo "substituting config values"
 # substitute config values
@@ -56,29 +57,25 @@ for i in `ls -1 *.py`; do
   echo "- ${i}: replacing some module imports with upython variants"
   # use upython specific modules, works mostly by changing the import
   # but using the original names allows for local unit testing
-  perl -pe 's/^from struct /from ustruct /' "$i" > "$i".tmp
-  mv "$i".tmp "$i"
+  perl -i.ori -pe 's/^from struct /from ustruct /' "$i"
 
   echo "- ${i}: remove comments"
   # remove comments, save some byte
-  perl -pe 's/#.*//' "$i" > "$i".tmp
-  mv "$i".tmp "$i"
+  #perl -i.ori -pe 's/#.*//' "$i"
 
   if [ "${CONFIG_DEBUG_LOG_ENABLED}" != "True" ]; then
     echo "- ${i}: removing log_debug statements"
     # remove log debug statements, except the function definitions
-    perl -pe 's/(?!def )\s*log_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
-    mv "$i".tmp "$i"
+    # will only work on single line statements!
+    perl -i.ori -pe 's/^(?!def )(.*?)log_debug\s*\(.*$/$1pass/' "$i" 
 
     echo "- ${i}: removing blink_debug statements"
-    perl -pe 's/(?!def )\s*blink_debug\s*\((\([^\)]*\)|[^\(\)]*)\)\s*(?!:)\s*//' "$i" > "$i".tmp
-    mv "$i".tmp "$i"
+    perl -i.ori -pe 's/^(?!def )(.*?)blink_debug\s*\(.*$/$1pass/' "$i"
   fi
 
   # remove empty lines
   echo "- ${i}: remove empty lines"
-  perl -ne 'print $_ if not s/^\s*\n$//' "$i" > "$i".tmp
-  mv "$i".tmp "$i"
+  perl -i.ori -ne 'print $_ if not s/^\s*\n$//' "$i"
 
   echo "- ${i}: checking python syntax (py_compile)"
   python3 -m py_compile "$i"
@@ -105,7 +102,11 @@ fi
 
 SIZE=`wc -c humtemp.mpy main.py boot.py | tail -n 1 | awk '{print $1}'`
 USED_SIZE=`du --block-size=1 --total humtemp.mpy main.py boot.py | tail --lines 1 | cut --fields 1`
+
 echo "installing to device ${AMPY_PORT} boud ${AMPY_BOUD} real size ${USED_SIZE} (size ${SIZE}) free available 40961"
+
+#echo "NOT SENDING"
+#exit
 
 echo "- humtemp.mpy"
 ampy put humtemp.mpy
