@@ -4,9 +4,11 @@ from log import *
 adc = None
 # As per spec https://docs.micropython.org/en/latest/esp8266/quickref.html#adc-analog-to-digital-conversion
 # 0 to value is available
-adc_max_val = 1024
+adc_max_val = const(1024)
 # 4.3 devided 47k to 10k, => 0.7543859649
-adc_max_val_expected = 772
+adc_max_val_expected = const(772)
+
+# TODO use milli volts to avoid floats
 
 # Max seen value empirical using 3xAA
 bat_max_expected_voltage = 4.3
