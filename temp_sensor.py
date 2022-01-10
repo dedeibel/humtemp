@@ -28,9 +28,11 @@ def init_temp_sensor():
     log_debug('init temp sensor done, found onewire devices: '+ str(len(devices)))
 
 def do_onewire_reading():
-    log_debug('measuring max temp sensor')
+    log_debug('measuring max temp sensor - need to wait 750ms afterwards')
     ds.convert_temp()
-    # we'll sleep in the main loop – but don't forget!
+    # We need to sleep after issueing the reading.
+    # 
+    # We'll sleep in the main loop – but don't forget!
     # time.sleep_ms(750)
 
 def read_onewire_temp():
