@@ -100,6 +100,8 @@ mpy-cross --version
 mpy-cross -march=xtensa -O3 -o humtemp.mpy humtemp.py
 # -mcache-lookup-bc gives incompatbile mpy file msg
 # -mno-unicode gives incompatbile mpy file msg
+# Msg might also be bc of too much memory usage according to
+# https://github.com/micropython/micropython/issues/6749
 
 # duck the screen terminal
 if [ "$CONFIG_KILL_SCREEN" -eq 1 ]; then
