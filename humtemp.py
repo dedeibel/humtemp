@@ -109,11 +109,11 @@ def main_loop():
             if READ_BATTERY_FROM_ADC:
                 try:
                     log_debug('reading battery voltage')
-                    battery_voltage_raw = read_battery_voltage_raw()
-                    battery_voltage = raw_to_battery_voltage(battery_voltage_raw)
-                    log_debug('battery voltage raw: ' + str(battery_voltage_raw) + ' battery voltage: '+ str(battery_voltage));
+                    adc_voltage_raw = read_voltage_raw()
+                    battery_voltage = raw_to_battery_voltage(adc_voltage_raw)
+                    log_debug('adc voltage raw: ' + str(adc_voltage_raw) + ' battery voltage: '+ str(battery_voltage));
                     blink_debug()
-                    set_measurement(state_entry, "adc0", "voltage", battery_voltage_raw)
+                    set_measurement(state_entry, "adc0", "voltage", adc_voltage_raw)
                     set_measurement(state_entry, "battery", "voltage", battery_voltage)
                 except Exception as err:
                     error_count += 1
