@@ -100,10 +100,6 @@ Is used by the build.sh script.
  - https://github.com/micropython/micropython
  - https://github.com/pfalcon/esp-open-sdk
 
-## TODOs
-
-- Improve battery ADC measurment calibration
-
 ## Improvement Ideas
 
  - configration.py could be created/filled by the user now that we have multiple modules
