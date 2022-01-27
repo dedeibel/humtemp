@@ -174,8 +174,6 @@ def main_loop():
             iterations += 1
 
 def start():
-    log_debug("")
-    log_debug("")
     init_deepsleep()
     init_temp_sensor()
     init_humid_sensor()
