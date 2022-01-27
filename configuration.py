@@ -13,17 +13,15 @@ TEMP_SENSOR_PIN = const(13)
 # 298: 5 Minutes, minus 2 seconds startup
 #DEEPSLEEP_SECONDS = const(898) # 15 minutes
 
+ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS = const(60)
+
 # Settings for debugging
 ENTRIES_SEND_BATCH_SIZE = const(1)
-SECONDS_BETWEEN_MEASUREMENTS = const(10)
-DEEPSLEEP_AFTER_ITERATIONS = const(5)
-DEEPSLEEP_SECONDS = const(15)
+SECONDS_BETWEEN_MEASUREMENTS = const(15)
+DEEPSLEEP_AFTER_ITERATIONS = const(3)
+DEEPSLEEP_SECONDS = const(60)
 
 NTP_UPDATE_TIME = True
-
-READ_BATTERY_FROM_ADC = True
-
-ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS = const(60)
 
 DEBUG_LOG_ENABLED = $CONFIG_DEBUG_LOG_ENABLED
 
@@ -34,3 +32,25 @@ CARBON_HOST = '$CONFIG_CARBON_HOST'
 CARBON_PORT = const($CONFIG_CARBON_PORT)
 CARBON_DATA_PATH_PREFIX = '$CONFIG_CARBON_DATA_PATH_PREFIX'
 
+READ_BATTERY_FROM_ADC = True
+
+# As per spec https://docs.micropython.org/en/latest/esp8266/quickref.html#adc-analog-to-digital-conversion
+# adc_max_val = const(1023)
+# factor to get mV
+# 1 / adc_max_val
+# times 1000 for mV
+ADC_FACTOR_ONE_OVER = 0.9775
+# Add to adc mV result
+ADC_OFFSET_MV = const(0)
+
+# 1 MOhm vs 220 kOhm voltage divider
+# battery_factor = 0.18033
+# 1 / battery_factor
+BATTERY_FACTOR_ONE_OVER = 5.545454
+
+# 47 kOhm vs 10 kOhm voltage divider
+# battery_factor = 0.17544
+# 1 / battery_factor
+# battery_factor_one_over = 5.7
+
+# adc_min_working_val = 0.65 # by experiment
