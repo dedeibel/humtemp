@@ -18,11 +18,12 @@ def init_wifi():
     if not sta_if.isconnected():
         log_debug('connecting to network '+ WIFI_ESSID + ' ...')
         sta_if.active(True)
-        # TODO set static IP here sta_if.ifconfig(('xxx.xxx.xxx.xxx','255.255.255.0','192.168.1.1','xxx.xxx.xxx.xxx'))
+        if WIFI_USE_STATIC_IP:
+            sta_if.ifconfig((WIFI_IP, WIFI_NETMASK, WIFI_GATEWAY, WIFI_DNS_SERVER))
         sta_if.connect(WIFI_ESSID, WIFI_PASSWD)
         while not sta_if.isconnected():
-            sleep(.3)
             log_debug('waiting ...')
+            sleep(2) # it usually took about three seconds
             pass
 
     wifi_initialized = True

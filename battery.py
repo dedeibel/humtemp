@@ -3,7 +3,6 @@ from machine import ADC
 from log import *
 
 adc = None
-# As per spec https://docs.micropython.org/en/latest/esp8266/quickref.html#adc-analog-to-digital-conversion
 
 def init_battery():
     global adc
