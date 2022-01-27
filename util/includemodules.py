@@ -101,8 +101,10 @@ def main():
         sys.exit()
 
     import_list = [[name, rank] for (name, rank) in imports.items()]
-    import_list = sorted(import_list, key=lambda x: x[1])
     import_list = list(map(lambda entry: entry[0] + '.py', import_list))
+
+    # Print detected imports in order
+    # print(str(import_list))
 
     with open(args.infile, "r") as infile:
         with open(args.outfile, "w") as outfile:
