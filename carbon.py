@@ -54,14 +54,18 @@ def send_state_to_carbon():
 def _send_to_carbon(carbon_socket, state_entry):
     time = state_entry['meta.time']
     for name, value in state_entry.items():
+        # log_debug('sending data name: ' + str(name))
         _send_all(carbon_socket,
             '%s%s %.2f %d\n' % (CARBON_DATA_PATH_PREFIX, name, value, time))
+        # Helps with sending UDP packets... should not be... I dont like it
+        #sleep(1)
 
 def _send_all(socket, msg):
     msglen = len(msg);
     totalsent = 0
     while totalsent < msglen:
         sent = socket.send(msg[totalsent:])
+        # log_debug('sent: ' + str(sent) + " of: " + str(msglen))
         if sent == 0:
             raise RuntimeError("Socket connection broken")
         totalsent = totalsent + sent
