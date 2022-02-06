@@ -22,11 +22,14 @@ def send_state_to_carbon():
         #carbon_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
         # tcp (port 2004)
         carbon_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+        # blocking io might be default but since I had problems with lost data
+        # when sending data, closing socket and then deepsleeping, we make sure
+        # here. Is not sufficient, only sleeping helped. what the...
+        carbon_socket.setblocking(True)
        
         # UDP will not wait for the data to be sent before shutting down
         # the system. Data will get lost, setblocking does not help either.
         # Bug?
-        # carbon_socket.setblocking(True)
         
         carbon_socket.connect(carbon_addr[4])
         
@@ -38,6 +41,10 @@ def send_state_to_carbon():
                 log_warning('Error sending entry (skipping): ' + str(err))
 
         carbon_socket.close()
+        # make sure data is sent, it seems like also with TCP there is an issue
+        # where the subsystem needs more time to send the data although we
+        # called close. If we go to deepsleep now the data might not be send 
+        sleep(1) 
 
         log_debug('sent %d entries to carbon server' % successfully_sent)
 
