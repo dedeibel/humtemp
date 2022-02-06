@@ -18,12 +18,16 @@ def send_state_to_carbon():
 
         state_entries = get_state_entries()
 
-        # udp
-        carbon_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
-        # tcp
-        # arbon_socket = socket(AF_INET, SOCK_STREAM)
-        # auto select by addr but will use tcp ignoring dgram setting
-        # carbon_socket = usocket.socket(carbon_addr[0], carbon_addr[1], carbon_addr[2])
+        # udp (port 2003)
+        #carbon_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_DGRAM)
+        # tcp (port 2004)
+        carbon_socket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+       
+        # UDP will not wait for the data to be sent before shutting down
+        # the system. Data will get lost, setblocking does not help either.
+        # Bug?
+        # carbon_socket.setblocking(True)
+        
         carbon_socket.connect(carbon_addr[4])
         
         for entry in state_entries:
