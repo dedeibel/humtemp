@@ -20,10 +20,15 @@ def init_deepsleep():
     rtc.irq(trigger=rtc.ALARM0, wake=machine.DEEPSLEEP)
     log_debug('init deepsleep done')
 
+# use https://docs.micropython.org/en/latest/library/esp.html?highlight=deepsleep#esp.deepsleep
+# or https://docs.micropython.org/en/latest/library/machine.html#machine.deepsleep
+
 def deepsleep():
     if DEBUG_LOG_ENABLED:
-        log('going to deepsleep for: %d current time is: %ds: %s' % (DEEPSLEEP_SECONDS * 1000, unix_time(), strftime()))
+        log_debug('going to deepsleep for: %d current time is: %ds: %s' % (DEEPSLEEP_MS, unix_time(), strftime()))
     # set RTC.ALARM0 to fire after 10 seconds (waking the device)
-    rtc.alarm(rtc.ALARM0, DEEPSLEEP_SECONDS * 1000)
-    machine.deepsleep()
+    rtc.alarm(rtc.ALARM0, DEEPSLEEP_MS)
+    # doc seems outdated about esp.deepsleep - it does nothing, use
+    # machine.deepsleep
+    machine.deepsleep(DEEPSLEEP_MS)
 
