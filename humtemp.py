@@ -163,12 +163,14 @@ def main_loop():
             errnomsg = errno.errorcode[exerrno]
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds) errno: %d errnomsg: %s excpt: %s' % (timeout_seconds, exerrno, errnomsg, str(err)))
+            blink(60, 30) # ok, this makes the holdoff absurd but I is visible without analysis
             sleep(timeout_seconds)
         except Exception as err:
             error_count += 1
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds): %s' % (timeout_seconds, str(err)))
             # Errno 110 ETIMEOUT might be a sensor is not available or responding, check cables
+            blink(60, 30) # ok, this makes the holdoff absurd but I is visible without analysis
             sleep(timeout_seconds)
         finally:
             iterations += 1

@@ -13,8 +13,8 @@ def led_off():
 def blink_debug(cycles = 1):
     blink(cycles)
 
-def blink(cycles = 1):
-    pause_seconds = BLINK_SECONDS / cycles
+def blink(cycles = 1, overal_duration = BLINK_SECONDS):
+    pause_seconds = overal_duration / cycles
     for i in range(cycles):
         led_on()
         sleep(pause_seconds)
