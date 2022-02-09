@@ -16,9 +16,16 @@ Temperature and humidity sensor control for the ESP8266 (HUZZAH ESP8266 breakout
 
 ## Wiring Plan
 
-_TODO_
+See `./model`.
 
-Default pins
+Notes
+
+ - RHT03 is actually DHT22 (chose the wrong one or was was not available at the
+   time)
+ - Resistors for ADC circuit are mounted standing up but this does not seem to
+   be supported in the breadboard view. So it looks weird.
+
+Default pin assignment:
 
  - DHT22 on 12
  - Temp Sensor on pin 13
@@ -54,6 +61,8 @@ Copy `mpy_cross` into PATH.
 ### mpy version
 
 Via: utils/mpyversion.py
+
+Example:
 
   mpy version: 5
   mpy flags: -march=xtensa
