@@ -105,6 +105,15 @@ echo "compile humtemp using mpy-cross"
 
 mpy-cross --version
 
+#
+# I did all the "optimization" above before I knew mpy-cross. I had issues with
+# not enough storage space or with too little RAM when I used the files as is
+# and separated over all those modules. So I removed all the stuff and combined
+# it into one. 
+# The size still went down even when using mpy-cross and it was easier to keep
+# the "one file" solution. So here we are.
+#
+
 mpy-cross -march=xtensa -O3 -o humtemp.mpy humtemp.py
 # -mcache-lookup-bc gives incompatbile mpy file msg
 # -mno-unicode gives incompatbile mpy file msg
