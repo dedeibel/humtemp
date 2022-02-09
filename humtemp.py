@@ -1,5 +1,5 @@
 import errno
-from time import sleep
+from time import sleep, sleep_ms
 
 from configuration import *
 from log import *
@@ -34,9 +34,6 @@ def next_holdoff_seconds():
 # main
 #
 
-def should_init_time_via_ntp():
-    return NTP_UPDATE_TIME == True
-
 def should_send_state_to_carbon():
     return (state_entry_count() % ENTRIES_SEND_BATCH_SIZE) == 0
 
@@ -44,19 +41,13 @@ def should_go_to_deepsleep(iterations):
     return DEEPSLEEP_AFTER_ITERATIONS > 0 and (iterations % DEEPSLEEP_AFTER_ITERATIONS) == 0
 
 def main_loop():
-    # Temporarily: for measuring if setting ntp time after each deep sleep is required
-    time_diff = None
-    if should_init_time_via_ntp():
-        time_diff = init_time_via_ntp()
-
     error_count = 0
     iterations = 1
     while True:
         try:
             blink_debug(3)
             state_entry = build_state_entry(unix_time(), iterations)
-            # Temporarily: for measuring if setting ntp time after each deep sleep is required
-            if time_diff != None:
+            if get_ntp_time_diff() != None:
                 set_meta(state_entry, "ntp_diff", time_diff)
 
             dht22_present = False
@@ -125,11 +116,7 @@ def main_loop():
             if DEBUG_LOG_ENABLED:
                 log(state_entry_to_string(state_entry))
 
-            try:
-                append_state_entry(state_entry)
-            except Exception as err:
-                error_count += 1
-                log_error('Error storing measurments locally, ignoring. Exception: ' + str(err))
+            append_state_entry(state_entry)
 
             blink_debug()
 
@@ -139,17 +126,21 @@ def main_loop():
                     send_state_to_carbon()
                     truncate_state()
                 except Exception as err:
-                    # error_count is sent at this point - but keep counting in
-                    # case of multiple iteration it will show up
-                    error_count += 1
-                    log_error('Error sending data, ignoring. Exception: ' + str(err))
+                    # If this was our only chance, this is critical, bail out
+                    if should_go_to_deepsleep(iterations):
+                        raise err
+                    else:
+                        # error_count is not sent at this point - but keep counting
+                        # next iteration it may be send
+                        error_count += 1
+                        log_error('Error sending data, ignoring. Exception: ' + str(err))
 
             blink_debug()
 
             if should_go_to_deepsleep(iterations):
                 blink_debug(6)
                 wifi_disconnect()
-                deepsleep()
+                deepsleep() # end
 
             reset_holdoff_timer()
 
@@ -163,26 +154,48 @@ def main_loop():
             errnomsg = errno.errorcode[exerrno]
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds) errno: %d errnomsg: %s excpt: %s' % (timeout_seconds, exerrno, errnomsg, str(err)))
-            blink(60, 30) # ok, this makes the holdoff absurd but I is visible without analysis
+            blink(6, 3000)
             sleep(timeout_seconds)
         except Exception as err:
             error_count += 1
             timeout_seconds = next_holdoff_seconds()
             log_error('Error in mainloop! (sleeping for %d seconds): %s' % (timeout_seconds, str(err)))
             # Errno 110 ETIMEOUT might be a sensor is not available or responding, check cables
-            blink(60, 30) # ok, this makes the holdoff absurd but I is visible without analysis
+            blink(4, 2000)
             sleep(timeout_seconds)
         finally:
             iterations += 1
 
 def start():
+    # led is enabled by default, switch it off
+    led_off()
+
     init_deepsleep()
     init_temp_sensor()
     init_humid_sensor()
     init_state()
+
     if READ_BATTERY_FROM_ADC:
         init_battery()
+
     reset_holdoff_timer()
+
+    try:
+        init_wifi()
+    except Exception as err:
+        log_error('Error when getting initializing wifi: %s' % (str(err)))
+        blink(10, 5000)
+        # try again in a minute
+        deepsleep(60000) # end
+
+    try:
+        init_time_via_ntp()
+    except Exception as err:
+        log_error('Error when getting ntp time: %s' % (str(err)))
+        blink(8, 4000)
+        # try again in a minute
+        deepsleep(60000) # end
+
     blink_debug()
     
     log_debug('init done, starting main loop, carbon prefix: %s' % (CARBON_DATA_PATH_PREFIX))

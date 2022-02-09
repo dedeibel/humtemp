@@ -87,6 +87,16 @@ After that:
 Or manually call `envsubst` from the build script and then copy the files to your micropython
 prepared esp.
 
+## Blink Codes
+
+ - 10 times - could not connect to wifi and the network. Going to sleep for a while an retry.
+ - 8 times - could not fetch initial ntp time. Going to sleep for a while an retry.
+ - 6 times - OSError occured in main loop. Retrying after a few seconds (with increasing holdoff time).
+ - 4 times - Exception occured in main loop. Retrying after a few seconds (with increasing holdoff time).
+
+Blinks a lot more when debug is on - so this makes only sense when compiled
+without debug.
+
 ## Utility Tools
 
 ### terminal-loop.sh

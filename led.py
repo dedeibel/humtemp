@@ -1,7 +1,7 @@
 import machine
-from time import sleep 
+from time import sleep_ms
 
-BLINK_SECONDS = 0.4
+BLINK_MS = 400
 ledpin = machine.Pin(0, machine.Pin.OUT)
 
 def led_on():
@@ -13,12 +13,13 @@ def led_off():
 def blink_debug(cycles = 1):
     blink(cycles)
 
-def blink(cycles = 1, overal_duration = BLINK_SECONDS):
-    pause_seconds = overal_duration / cycles
+def blink(cycles = 1, overal_duration_ms = BLINK_MS):
+    led_off()
+    pause_ms = int(overal_duration_ms / cycles)
     for i in range(cycles):
         led_on()
-        sleep(pause_seconds)
+        sleep_ms(pause_ms)
         led_off()
         if i != cycles - 1:
-            sleep(pause_seconds)
+            sleep_ms(pause_ms)
 

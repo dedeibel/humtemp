@@ -15,13 +15,14 @@ DEEPSLEEP_MS = const(898000) # 15 minutes
 
 ERROR_TIMEOUT_HOLDOFF_MAX_SECONDS = const(60)
 
-# Settings for debugging
+# Settings for debugging, make sure the other values are commented out 
 #ENTRIES_SEND_BATCH_SIZE = const(1)
 #SECONDS_BETWEEN_MEASUREMENTS = const(15)
 #DEEPSLEEP_AFTER_ITERATIONS = const(3)
 #DEEPSLEEP_MS = const(20000)
 
-NTP_UPDATE_TIME = True
+# Otherwise only on hard boot
+NTP_SKIP_AFTER_DEEPSLEEP = False
 
 DEBUG_LOG_ENABLED = $CONFIG_DEBUG_LOG_ENABLED
 

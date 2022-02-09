@@ -13,18 +13,26 @@ def init_wifi():
         log_debug('wifi already initialized, skipping init')
         return
 
+    log_debug('initializing network')
+
     global sta_if
     sta_if = network.WLAN(network.STA_IF)
+    sta_if.active(True)
+
+    attempts = 10
     if not sta_if.isconnected():
         log_debug('connecting to network '+ WIFI_ESSID + ' ...')
-        sta_if.active(True)
         if WIFI_USE_STATIC_IP:
             sta_if.ifconfig((WIFI_IP, WIFI_NETMASK, WIFI_GATEWAY, WIFI_DNS_SERVER))
         sta_if.connect(WIFI_ESSID, WIFI_PASSWD)
-        while not sta_if.isconnected():
+        while not sta_if.isconnected() and attempts > 0:
+            attempts -= 1
             log_debug('waiting ...')
             sleep(2) # it usually took about three seconds
             pass
+
+    if attempts <= 0:
+        raise Exception("Could not connect to network")
 
     wifi_initialized = True
     log_debug('init wifi done, network config: ' + str(sta_if.ifconfig()))

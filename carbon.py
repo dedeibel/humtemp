@@ -32,18 +32,20 @@ def send_state_to_carbon():
         # Bug?
         
         carbon_socket.connect(carbon_addr[4])
-        
+
         for entry in state_entries:
             try:
                 _send_to_carbon(carbon_socket, entry)
                 successfully_sent += 1
             except Exception as err:
                 log_warning('Error sending entry (skipping): ' + str(err))
+            finally:
+                carbon_socket.close()
 
-        carbon_socket.close()
         # make sure data is sent, it seems like also with TCP there is an issue
         # where the subsystem needs more time to send the data although we
-        # called close. If we go to deepsleep now the data might not be send 
+        # called close. If we go to deepsleep now the data might not be send.
+        # TODO find cause, create an issue 
         sleep(1) 
 
         log_debug('sent %d entries to carbon server' % successfully_sent)
@@ -64,8 +66,6 @@ def _send_to_carbon(carbon_socket, state_entry):
         # log_debug('sending data name: ' + str(name))
         _send_all(carbon_socket,
             '%s%s %.2f %d\n' % (CARBON_DATA_PATH_PREFIX, name, value, time))
-        # Helps with sending UDP packets... should not be... I dont like it
-        #sleep(1)
 
 def _send_all(socket, msg):
     msglen = len(msg);
@@ -74,7 +74,7 @@ def _send_all(socket, msg):
         sent = socket.send(msg[totalsent:])
         # log_debug('sent: ' + str(sent) + " of: " + str(msglen))
         if sent == 0:
-            raise RuntimeError("Socket connection broken")
+            raise Exception("Socket connection broken")
         totalsent = totalsent + sent
 
 def _init_carbon_addr_info():
