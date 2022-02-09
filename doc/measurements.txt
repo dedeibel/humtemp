@@ -1,0 +1,19 @@
+Board with parts:
+
+lxhxb 70x32x30
+
+l: Add 5 for temp sensor cable bend radius
+h: From esp pins to DHT top
+
+Battery pack:
+
+lxhxb 68x21x68
+
+h: Including on/off switch
+b: Add 4 for power cable bend radius
+
+Battery pack (open variant):
+
+lxhxb 58x16x58
+
+b: Add 4 for power cable bend radius
