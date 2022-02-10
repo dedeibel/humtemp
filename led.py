@@ -1,8 +1,9 @@
-import machine
+from machine import Pin
 from time import sleep_ms
 
 BLINK_MS = 400
-ledpin = machine.Pin(0, machine.Pin.OUT)
+# start off initially
+ledpin = Pin(0, Pin.OUT, value=1)
 
 def led_on():
     ledpin.value(0)

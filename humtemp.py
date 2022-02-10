@@ -167,9 +167,6 @@ def main_loop():
             iterations += 1
 
 def start():
-    # led is enabled by default, switch it off
-    led_off()
-
     init_deepsleep()
     init_temp_sensor()
     init_humid_sensor()
