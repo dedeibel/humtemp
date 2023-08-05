@@ -30,7 +30,7 @@ def init_time_via_ntp():
     ntptime.host = NTP_HOST
 
     # Can fail with OSError, so allow for a retry
-    for _ in range(2): 
+    for _ in range(5): 
         try:
             time_before = utime.time()
 
