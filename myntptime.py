@@ -18,7 +18,7 @@ def strftime():
 # returns the time diff after ntp ran or None if it did not update via ntp
 def init_time_via_ntp():
     log_debug('init time via ntp')
-
+ 
     if machine.reset_cause() == machine.DEEPSLEEP_RESET:
         log_debug('woke from a deep sleep, time is %ds: %s' % (unix_time(), strftime()))
         if NTP_SKIP_AFTER_DEEPSLEEP:
@@ -26,6 +26,8 @@ def init_time_via_ntp():
             return None
     else:
         log_debug('power on or hard reset')
+
+    ntptime.host = NTP_HOST
 
     # Can fail with OSError, so allow for a retry
     for _ in range(2): 
