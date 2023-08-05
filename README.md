@@ -37,17 +37,19 @@ See configuration.py for options.
 Mostly for the "build" process. Where the script files are stripped down a little.
 
  - python3
+ - python3 venv
  - perl
  - esptool.py from pip, not debian 
- - adafruit `ampy`
- - pathlib
  - mpy_cross
    - https://github.com/micropython/micropython/tree/v1.16/mpy-cross
    - check out or dl https://micropython.org/resources/source/micropython-1.16.tar.xz
    - make, copy to bin
  - micropython on the esp 
 
-`pip install adafruit-ampy pathlib`
+```
+source env/bin/activate
+pip install -r requirements.txt
+```
 
 Copy `mpy_cross` into PATH.
 
