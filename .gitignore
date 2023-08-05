@@ -3,3 +3,4 @@
 config
 dist
 db.dat
+env
