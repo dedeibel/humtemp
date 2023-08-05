@@ -17,3 +17,17 @@ Battery pack (open variant):
 lxhxb 58x16x58
 
 b: Add 4 for power cable bend radius
+
+----------
+
+Current Bricks Design:
+
+6x10 tiles (+1 border) 
+Room for 47.8x79.8 mm
+
+    1 HE → 9.6 mm
+    Height: n * HE - 1.8
+
+5 HE → Room for 46.2
+(I think 4 would be enough)
+4 HE → Room for 36.6
