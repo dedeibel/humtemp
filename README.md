@@ -1,13 +1,11 @@
 
 # humtemp
 
-work in progress
+Temperature and humidity sensor control for the ESP8266 (HUZZAH ESP8266 breakout)[https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/overview] in micropython.
 
-Temperature and humidity sensor control for the ESP8266 (HUZZAH ESP8266 breakout) in micropython.
-
- - Measure and store data in batches
- - Deepsleep between batches
- - Update time and send data to graphite carbon after a couple of batches
+ - Measure temperature and humidity
+ - Update time and send data to graphite carbon or influx
+ - Deepsleep between measurements
 
 ## Sensors
 
