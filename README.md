@@ -36,13 +36,13 @@ Mostly for the "build" process. Where the script files are stripped down a littl
 
  - python3
  - python3 venv
- - perl
- - esptool.py from pip, not debian 
+ - [requirements.txt](./requirements.txt)
+ - perl (for preprocessing)
  - mpy_cross
    - https://github.com/micropython/micropython/tree/v1.16/mpy-cross
    - check out or dl https://micropython.org/resources/source/micropython-1.16.tar.xz
    - make, copy to bin
- - micropython on the esp 
+ - micropython v1.20.0 on the esp 
 
 ```
 source env/bin/activate
@@ -54,7 +54,7 @@ Copy `mpy_cross` into PATH.
 ## Flashing esp
 
  - https://docs.micropython.org/en/latest/esp8266/tutorial/intro.html#intro
- - https://micropython.org/download/all/ e.g. `esp8266-20210618-v1.16.bin`
+ - https://micropython.org/download/esp8266/ e.g. `v1.20.0 (2023-04-26).bin`
  - `esptool.py --port /dev/ttyUSB0 erase_flash`
  - `esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash --flash_size=detect 0 esp8266-*.bin`
 

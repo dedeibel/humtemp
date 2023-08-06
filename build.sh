@@ -102,7 +102,7 @@ rm -f *.pyc
 echo "compile humtemp using mpy-cross"
 
 # Using mpyversion.py:
-# mpy version: 5
+# mpy version: 6
 # mpy flags: -march=xtensa
 
 mpy-cross --version
