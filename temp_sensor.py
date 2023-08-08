@@ -12,6 +12,8 @@ def init_temp_sensor():
     global ds
     global devices
 
+    log_debug('initializing temp sensors')
+
     dat = machine.Pin(TEMP_SENSOR_PIN)
     ds = ds18x20.DS18X20(onewire.OneWire(dat))
 
@@ -28,6 +30,7 @@ def init_temp_sensor():
     log_debug('init temp sensor done, found onewire devices: '+ str(len(devices)))
 
 def do_onewire_reading():
+    global ds
     log_debug('measuring max temp sensor - need to wait 750ms afterwards')
     ds.convert_temp()
     # We need to sleep after issueing the reading.

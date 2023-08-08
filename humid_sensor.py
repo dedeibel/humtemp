@@ -4,20 +4,25 @@ import dht
 from configuration import *
 from log import *
 
-dht22 = None
+mydht22 = None
 
 def init_humid_sensor():
-    global dht22
-    dht22 = dht.DHT22(machine.Pin(DHT22_PIN))
+    global mydht22
+
+    log_debug('initializing dht22')
+    mydht22 = dht.DHT22(machine.Pin(DHT22_PIN))
 
 def measure_humidity():
+    global mydht22
     log_debug('measuring dht22')
-    dht22.measure()
+    mydht22.measure()
 
 def read_humidity_temperature():
+    global mydht22
     log_debug('read dht22 temp value')
-    return dht22.temperature()
+    return mydht22.temperature()
 
 def read_humidity():
+    global mydht22
     log_debug('read dht22 humidity value')
-    return dht22.humidity()
+    return mydht22.humidity()

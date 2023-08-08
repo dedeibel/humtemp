@@ -11,6 +11,8 @@ def init_battery():
 
 # in mV
 def read_voltage_raw():
+    global adc
+
     return adc.read() * ADC_FACTOR_ONE_OVER + ADC_OFFSET_MV
 
 # in mV

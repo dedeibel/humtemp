@@ -1,14 +1,16 @@
 import utime
 import ntptime
 import errno
+import machine
 
 from log import *
 from wifi import *
 
-time_diff = None
+time_diff = 0
 
 # might be None
 def get_ntp_time_diff():
+    global time_diff
     return time_diff
 
 def strftime():
@@ -17,6 +19,8 @@ def strftime():
 
 # returns the time diff after ntp ran or None if it did not update via ntp
 def init_time_via_ntp():
+    global time_diff
+
     log_debug('init time via ntp')
  
     if machine.reset_cause() == machine.DEEPSLEEP_RESET:
@@ -36,7 +40,6 @@ def init_time_via_ntp():
 
             ntptime.settime()
 
-            global time_diff
             time_diff = utime.time() - time_before
             log_debug('time is: %s (diff after ntp call %d)' % (strftime(), time_diff))
 

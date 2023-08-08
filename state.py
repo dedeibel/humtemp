@@ -24,12 +24,15 @@ def append_state_entry(state_entry):
     state['entries'].append(state_entry)
 
 def get_state_entries():
+    global state
     return state['entries']
 
 def state_entry_count():
+    global state
     return len(state['entries'])
 
 def init_state():
+    global state
     log_debug('init state')
     truncate_state()
 

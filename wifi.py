@@ -9,13 +9,14 @@ sta_if = None
 
 def init_wifi():
     global wifi_initialized
+    global sta_if
+
     if wifi_initialized:
         log_debug('wifi already initialized, skipping init')
         return
 
     log_debug('initializing network')
 
-    global sta_if
     sta_if = network.WLAN(network.STA_IF)
     sta_if.active(True)
 

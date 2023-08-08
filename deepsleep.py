@@ -18,6 +18,8 @@ def init_deepsleep():
 # or https://docs.micropython.org/en/latest/library/machine.html#machine.deepsleep
 
 def deepsleep(sleep_time_ms = DEEPSLEEP_MS):
+    global rtc
+
     if DEBUG_LOG_ENABLED:
         log_debug('going to deepsleep for: %d current time is: %ds: %s' % (sleep_time_ms, unix_time(), strftime()))
     # set RTC.ALARM0 to fire after 10 seconds (waking the device)

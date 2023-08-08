@@ -1,0 +1,36 @@
+- Netzwerk IPs statisch vergeben
+- Konfiguration vereinfachen / vereinheitlichen
+- Sensoren mit Offsets versehen können
+- Integer nutzen wo möglich 
+
+
+- Kondensator in Messschaltung testen
+  - Stabilisiert in der Tat, aber 1MOhm zu 220kOhm verbraucht weniger Strom
+- ADC Wert Kalibrieren
+  - Messung mit Seriellem Kabel und an Breakboard unpräzise ... besser
+    später uU. mit Software am richtigen Board
+
+
+# 47 kOhm vs 10 kOhm voltage divider
+# battery_factor = 0.17544
+# 1 / battery_factor
+# battery_factor_one_over = 5.7
+
+# voltmeter
+# 5.25 to 0.850
+#
+# esp
+# 829.8 adc
+# 4708... bat
+#
+# with measuring
+# 77  mA working
+# 180 uA deepsleep
+#
+# with measuring 1M 220k divider
+# 92 uA deepsleep
+#
+# without measuring
+# 77 mA working
+# 88 uA deepsleep
+#

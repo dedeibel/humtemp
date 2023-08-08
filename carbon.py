@@ -78,7 +78,6 @@ def _send_all(socket, msg):
         totalsent = totalsent + sent
 
 def _init_carbon_addr_info():
-    global carbon_af
     global carbon_addr
     if carbon_addr != None:
         log_debug('carbon addr already present, skipping init')

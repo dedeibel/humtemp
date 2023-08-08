@@ -37,7 +37,7 @@ Mostly for the "build" process. Where the script files are stripped down a littl
  - python3
  - python3 venv
  - [requirements.txt](./requirements.txt)
- - perl (for preprocessing)
+ - perl (for preprocessing, removing debug log statements)
  - mpy_cross
    - https://github.com/micropython/micropython/tree/v1.16/mpy-cross
    - check out or dl https://micropython.org/resources/source/micropython-1.16.tar.xz
@@ -74,18 +74,12 @@ Prepare esp with micropython.
 After that:
 
 ```
-./build.sh
+make
 ```
 
  - Fill out the created `config` file
- - Connect esp using serial connection (and the configured device)
-
-```
-./build.sh
-```
-
-Or manually call `envsubst` from the build script and then copy the files to your micropython
-prepared esp.
+ - Connect esp using serial connection (and the configured tty)
+ - retry
 
 ## Blink Codes
 
@@ -104,13 +98,22 @@ without debug.
 Will open a screen session in a loop. It will be closed before flushing
 the device and opens up again when using enter.
 
-### includemodules.py
+### util/clean_esp.sh
 
-Combines incldued modules into one file. Works only for module files
-that are present in the current directory. Works only for imports
-of all symbols: `from example import *`.
+Removes all files from the esp. 
 
-Is used by the build.sh script.
+### util/mpyversion.py
+
+Prints the required mpy version for the installed micropython firmware on the
+esp.
+
+### util/smoke-test.py
+
+Call `esp.check_fw()`, and blink the LED.
+
+### util/freespace.sh
+
+Connects to the esp and lists the free flash space.
 
 ## References
 
