@@ -39,8 +39,7 @@ Mostly for the "build" process. Where the script files are stripped down a littl
  - [requirements.txt](./requirements.txt)
  - perl (for preprocessing, removing debug log statements)
  - mpy_cross
-   - https://github.com/micropython/micropython/tree/v1.16/mpy-cross
-   - check out or dl https://micropython.org/resources/source/micropython-1.16.tar.xz
+   - https://github.com/micropython/micropython/tree/v1.20.0/mpy-cross
    - make, copy to bin
  - micropython v1.20.0 on the esp 
 
@@ -64,7 +63,7 @@ Via: utils/mpyversion.py
 
 Example:
 
-  mpy version: 5
+  mpy version: 6
   mpy flags: -march=xtensa
 
 ## Building and running
