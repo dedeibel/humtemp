@@ -1,7 +1,7 @@
 
 # humtemp
 
-Temperature and humidity sensor control for the ESP8266 (HUZZAH ESP8266 breakout)[https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/overview] in micropython.
+Temperature and humidity sensor control for the ESP8266 [HUZZAH ESP8266 breakout](https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/overview) in micropython.
 
  - Measure temperature and humidity
  - Update time and send data to graphite carbon or influx
@@ -9,8 +9,8 @@ Temperature and humidity sensor control for the ESP8266 (HUZZAH ESP8266 breakout
 
 ## Sensors
 
- - MAX31820MCR-ND temp sensor https://www.digikey.com/product-detail/en/maxim-integrated/MAX31820MCR/MAX31820MCR-ND/4271348
- - DHT 22 humidity and temp sensor, Adafruit Industries LLC https://www.digikey.com/products/en/sensors-transducers/humidity-moisture-sensors/529?k=dht22
+ - [MAX31820MCR-ND](https://www.digikey.com/product-detail/en/maxim-integrated/MAX31820MCR/MAX31820MCR-ND/4271348) temp sensor
+ - [DHT 22](https://www.digikey.com/products/en/sensors-transducers/humidity-moisture-sensors/529?k=dht22) humidity and temp sensor, Adafruit Industries LLC
 
 ## Wiring Plan
 
